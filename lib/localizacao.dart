@@ -259,19 +259,22 @@ class RouteExamplesPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 20),
                             ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MapPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Ver Localização do Ônibus',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPage(),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blue, // Altere a cor aqui
+  ),
+  child: const Text(
+    'Ver Localização do Ônibus',
+    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+  ),
+),
                           ],
                         ),
                       ),
@@ -309,19 +312,22 @@ class RouteExamplesPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 20),
                             ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MapPage(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Ver Localização do Ônibus',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPage(),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blue, // Altere a cor aqui
+  ),
+  child: const Text(
+    'Ver Localização do Ônibus',
+    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+  ),
+),
                           ],
                         ),
                       ),
