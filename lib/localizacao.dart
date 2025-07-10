@@ -1,3 +1,4 @@
+import 'package:app_flutter/map.page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -411,6 +412,16 @@ class BusLocationPage extends StatelessWidget {
                 latitude: busData.busLatitude,
                 longitude: busData.busLongitude,
               ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapPage()),
+                );
+              },
+              child: const Text('Abrir Mapa Completo'),
             ),
           ],
         ),
