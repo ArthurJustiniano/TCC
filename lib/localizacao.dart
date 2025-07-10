@@ -263,11 +263,10 @@ class RouteExamplesPage extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const BusLocationPage(driverName: 'James'),
+                                    builder: (context) => MapPage(),
                                   ),
                                 );
                               },
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                               child: const Text(
                                 'Ver Localização do Ônibus',
                                 style: TextStyle(color: Colors.white),
@@ -314,11 +313,10 @@ class RouteExamplesPage extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const BusLocationPage(driverName: 'Leandro'),
+                                    builder: (context) => MapPage(),
                                   ),
                                 );
                               },
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                               child: const Text(
                                 'Ver Localização do Ônibus',
                                 style: TextStyle(color: Colors.white),
