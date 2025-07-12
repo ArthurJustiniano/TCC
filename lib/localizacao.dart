@@ -3,15 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => BusData(),
-      child: const MyApp(),
-    ),
-  );
-}
-
 class BusData extends ChangeNotifier {
   String _selectedRoute = 'Route 1';
   String get selectedRoute => _selectedRoute;
@@ -61,19 +52,6 @@ class BusData extends ChangeNotifier {
   }
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'School Bus App',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: const BusAppHomePage(),
-    );
-  }
-}
-
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
 
@@ -107,6 +85,7 @@ class _BusAppHomePageState extends State<BusAppHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text('Localização em Tempo Real')),
       body: SingleChildScrollView(
         child: Column(
           children: [
