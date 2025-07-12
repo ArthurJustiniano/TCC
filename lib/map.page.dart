@@ -8,11 +8,30 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
    late GoogleMapController mapController;
+   final Set<Marker> markers = {};
   double lat = -20.834999;
   double long = -49.488359;
 
-    void _onMapCreated(GoogleMapController controller) {
+  void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+  }
+
+  void _updateLocation() {
+    setState(() {
+      lat = -20.8394218;
+      long = -49.4937192;
+
+      final position = LatLng(lat, long);
+      markers.add(
+        Marker(
+          markerId: MarkerId(position.toString()),
+          position: position,
+          infoWindow: const InfoWindow(title: 'Nova Posição'),
+        ),
+      );
+      // Alteração para incluir o zoom
+      mapController.animateCamera(CameraUpdate.newLatLngZoom(position, 18.0));
+    });
   }
 
   @override
@@ -21,14 +40,23 @@ class _MapPageState extends State<MapPage> {
       appBar: AppBar(title: const Text('Mapa Completo')),
       body: GoogleMap(
         onMapCreated: _onMapCreated,
-        initialCameraPosition: CameraPosition(
+        onCameraMove: (data) {
+           print(data);
+        },
+        onTap: (position) {
+          print(position);
+        },
+         initialCameraPosition: CameraPosition(
           target: LatLng(lat, long),
           zoom: 15.0,
         ),
-       
+        markers: markers,
       ),
-        
-      
+      floatingActionButton: FloatingActionButton(
+        onPressed: _updateLocation,
+        child: const Icon(Icons.directions_bus),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }
