@@ -259,22 +259,22 @@ class RouteExamplesPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 20),
                             ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MapPage(),
-      ),
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.blue, // Altere a cor aqui
-  ),
-  child: const Text(
-    'Ver Localização do Ônibus',
-    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
-  ),
-),
+                              style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                  ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MapPage(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'Ver Localização do Ônibus',
+                                style: TextStyle(color: Color.fromARGB(255, 250, 250, 250)),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -290,44 +290,47 @@ class RouteExamplesPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 20),
                             RouteExampleCard(
-                              routeName: 'Rota 303 - Industrial',
+                              routeName: 'Rota manhã',
                               stops: const [
-                                'Ponto Inicial: CIC Norte',
-                                'Ponto 1: Renault',
-                                'Ponto 2: Volvo',
-                                'Ponto 3: Bosch',
-                                'Ponto Final: Parque Barigui',
+                                'Ponto Inicial: ...',
+                                'Ponto 1: Parque Das Flores, Caixa D`água',
+                                'Ponto 2: Posto Chinão',
+                                'Ponto 3: Livraria Balipa',
+                                'Ponto Final: Tufi Madi',
+                                'Ponto Final: Posto Irmãos Coragem',
                               ],
                             ),
                             const SizedBox(height: 20),
                             RouteExampleCard(
-                              routeName: 'Rota 404 - Leste',
+                              routeName: 'Rota Tarde',
                               stops: const [
-                                'Ponto Inicial: Terminal Guadalupe',
-                                'Ponto 1: Shopping Mueller',
-                                'Ponto 2: Jardim Botânico',
-                                'Ponto 3: Mercado Municipal',
-                                'Ponto Final: Rodoferroviária',
+                                'Ponto Inicial: Etec Philadelhpho Gouveia Neto',
+                                'Ponto 1: Posto HM',
+                                'Ponto 2: Tufi Madi',
+                                'Ponto 3: Escola Wilson paschoal',
+                                'Ponto 4: Cohab II',
+                                'Ponto Final: Parque das Flores Caixa D`água',
                               ],
                             ),
                             const SizedBox(height: 20),
                             ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MapPage(),
-      ),
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.blue, // Altere a cor aqui
-  ),
-  child: const Text(
-    'Ver Localização do Ônibus',
-    style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
-  ),
-),
+                              style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                  ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MapPage(),
+                                  ),
+                            
+                                );
+                              },
+                              child: const Text(
+                                'Ver Localização do Ônibus',
+                                style: TextStyle(color: Color.fromARGB(255, 247, 247, 247)),
+                              ),
+                            ),
                           ],
                         ),
                       ),
