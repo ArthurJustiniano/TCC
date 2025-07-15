@@ -3,6 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 
+void main() {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BusData()),
+      ],
+      child: const MaterialApp(
+        home: BusAppHomePage(),
+        debugShowCheckedModeBanner: false,
+      ),
+    ),
+  );
+}
+
 class BusData extends ChangeNotifier {
   String _selectedRoute = 'Route 1';
   String get selectedRoute => _selectedRoute;
