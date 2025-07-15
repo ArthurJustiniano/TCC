@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart' as intl;
 import 'package:intl/intl.dart';
-
+import 'package:app_flutter/chatpage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +137,21 @@ class _DigitalCardScreenState extends State<DigitalCardScreen> {
                           );
                         },
                       ),
+                      ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatPage(
+          username: 'SeuNome', // Troque pelo nome do usuário logado
+          wsUrl: 'wss://echo.websocket.org', // Troque pela URL do seu WebSocket
+        ),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+  child: const Text('Abrir Chat', style: TextStyle(color: Colors.blue)),
+),
                     ],
                   ),
                 ),
