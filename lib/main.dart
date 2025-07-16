@@ -3,6 +3,7 @@ import 'package:app_flutter/localizacao.dart' as localizacao;
 import 'package:app_flutter/carteirinha.dart' as carteirinha;
 import 'package:app_flutter/chatpage.dart' as chatpage;
 import 'package:provider/provider.dart';
+import 'package:app_flutter/maispage.dart' as maispage;
 
 String nomeUsuario = "DAVI";
 String websocket = 'wss://seu-endereco-websocket';
@@ -51,6 +52,7 @@ class _MainTabsState extends State<MainTabs> {
       username: nomeUsuario,
       wsUrl: websocket,
     ),
+    maispage.Maispage(),
   ];
 
   void _onItemTapped(int index) {
@@ -80,6 +82,10 @@ class _MainTabsState extends State<MainTabs> {
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
             label: 'Bate-papo',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.more),
+            label: 'Mais',
           ),
         ],
       ),
