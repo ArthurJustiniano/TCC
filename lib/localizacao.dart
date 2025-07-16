@@ -3,20 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 
-void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => BusData()),
-      ],
-      child: const MaterialApp(
-        home: BusAppHomePage(),
-        debugShowCheckedModeBanner: false,
-      ),
-    ),
-  );
-}
-
 class BusData extends ChangeNotifier {
   String _selectedRoute = 'Route 1';
   String get selectedRoute => _selectedRoute;
@@ -126,11 +112,12 @@ class OrangeBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(color: Colors.blue),
+      // Corrigindo cor e texto do banner
+      decoration: const BoxDecoration(color: Colors.orange),
       child: Column(
         children: const [
           Icon(Icons.directions_bus, size: 50, color: Colors.white),
-          Text('Asseumir', style: TextStyle(fontSize: 24, color: Colors.white)),
+          Text('Assumir', style: TextStyle(fontSize: 24, color: Colors.white)),
           Text(
             'Acompanhe em tempo real',
             style: TextStyle(fontSize: 16, color: Colors.white),

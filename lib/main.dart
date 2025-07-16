@@ -2,12 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:app_flutter/localizacao.dart' as localizacao;
 import 'package:app_flutter/carteirinha.dart' as carteirinha;
 import 'package:app_flutter/chatpage.dart' as chatpage;
+import 'package:provider/provider.dart';
 
 String nomeUsuario = "DAVI";
 String websocket = 'wss://seu-endereco-websocket';
 
 void main() {
-  runApp(const MyApp());
+  // Envolvemos o aplicativo com o Provider aqui
+  // para que toda a aplicação tenha acesso aos dados do ônibus.
+  runApp(
+    MultiProvider(
+      providers: [
+        // Usamos o 'as localizacao' para especificar de onde vem o BusData
+        ChangeNotifierProvider(create: (_) => localizacao.BusData()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -16,6 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'RotaFácil',
       home: const MainTabs(),
     );
