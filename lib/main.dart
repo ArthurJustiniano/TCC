@@ -2,24 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:app_flutter/localizacao.dart' as localizacao;
 import 'package:app_flutter/carteirinha.dart' as carteirinha;
 import 'package:app_flutter/chatpage.dart' as chatpage;
-import 'package:provider/provider.dart';
-import 'package:app_flutter/maispage.dart' as maispage;
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 String nomeUsuario = "DAVI";
 String websocket = 'wss://seu-endereco-websocket';
 
-void main() {
-  // Envolvemos o aplicativo com o Provider aqui
-  // para que toda a aplicação tenha acesso aos dados do ônibus.
-  runApp(
-    MultiProvider(
-      providers: [
-        // Usamos o 'as localizacao' para especificar de onde vem o BusData
-        ChangeNotifierProvider(create: (_) => localizacao.BusData()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+Future<void> main() async {
+  // Garante que os widgets do Flutter estão prontos
+  WidgetsFlutterBinding.ensureInitialized();
+  // Inicializa o Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Agora que os dados vêm do Firebase, não precisamos mais do Provider aqui.
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -52,7 +48,6 @@ class _MainTabsState extends State<MainTabs> {
       username: nomeUsuario,
       wsUrl: websocket,
     ),
-    maispage.Maispage(),
   ];
 
   void _onItemTapped(int index) {
@@ -82,10 +77,6 @@ class _MainTabsState extends State<MainTabs> {
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
             label: 'Bate-papo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.more),
-            label: 'Mais',
           ),
         ],
       ),
