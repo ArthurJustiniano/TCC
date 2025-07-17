@@ -13,12 +13,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // MapPage é um widget com estado (StatefulWidget) porque seu conteúdo (posição no mapa, marcadores) pode mudar.
 class MapPage extends StatefulWidget {
-  // Recebe o ID do motorista/usuário que deve ser rastreado.
+  // Recebe o ID do USUÁRIO que deve ser rastreado.
   // Pode ser nulo se nenhum rastreamento específico for necessário.
-  final String? driverId;
+  final String? trackedUserId;
 
   // Construtor do widget. 'key' é passado para a classe pai e 'driverId' é um parâmetro obrigatório ou opcional.
-  const MapPage({super.key, this.driverId});
+  const MapPage({super.key, this.trackedUserId});
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -165,44 +165,56 @@ class _MapPageState extends State<MapPage> {
 
   /// Inicia o monitoramento da localização de um documento no Firestore.
   void _startTrackingFromFirestore() {
-    // Se não foi fornecido um ID de motorista, não faz nada.
-    if (widget.driverId == null) return;
+    // Se não foi fornecido um ID de usuário para rastrear, não faz nada.
+    if (widget.trackedUserId == null) return;
 
     // Cancela qualquer "escuta" (subscription) anterior para evitar múltiplos listeners e vazamentos de memória.
     _locationSubscription?.cancel();
 
-    // Cria uma referência ao documento do motorista na coleção 'locations' do Firestore.
-    // Exemplo: 'locations/James'
-    final driverDocRef =
-        FirebaseFirestore.instance.collection('locations').doc(widget.driverId);
+    // Cria uma referência ao documento do usuário na coleção 'user_locations'.
+    // Exemplo: 'user_locations/davi_silva'
+    final userDocRef = FirebaseFirestore.instance
+        .collection('user_locations')
+        .doc(widget.trackedUserId);
 
     // "Escuta" (listen) as mudanças no documento em tempo real usando snapshots.
     _locationSubscription =
-        driverDocRef.snapshots().listen((DocumentSnapshot doc) {
+        userDocRef.snapshots().listen((DocumentSnapshot doc) {
       // Callback executado sempre que o documento muda.
       if (doc.exists && doc.data() != null) {
         // Se o documento existe e tem dados, extrai as informações.
         final data = doc.data() as Map<String, dynamic>;
-        final busPosition = LatLng(data['latitude'], data['longitude']);
 
-        // Guarda a posição na variável de estado para uso posterior (ex: botão de centralizar).
-        if (mounted) {
-          setState(() {
-            _trackedUserPosition = busPosition;
-          });
+        // VERIFICAÇÃO DE SEGURANÇA: Garante que os campos existem e são do tipo double.
+        if (data.containsKey('latitude') &&
+            data.containsKey('longitude') &&
+            data['latitude'] is double &&
+            data['longitude'] is double) {
+          final userPosition = LatLng(data['latitude'], data['longitude']);
+
+          // Guarda a posição na variável de estado para uso posterior (ex: botão de centralizar).
+          if (mounted) {
+            setState(() {
+              _trackedUserPosition = userPosition;
+            });
+          }
+
+          // Tenta obter o nome do usuário do documento, se não existir, usa o ID.
+          final trackedUserName = data['nome'] as String? ?? widget.trackedUserId;
+
+          // Atualiza o marcador do usuário rastreado no mapa com a nova posição.
+          _updateMarker(
+            Marker(
+              markerId: const MarkerId('tracked_user_location'),
+              position: userPosition,
+              infoWindow: InfoWindow(
+                  title: trackedUserName ??
+                      'Usuário rastreado'), // O título do marcador será o nome do usuário.
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor
+                  .hueOrange), // Marcador LARANJA para o outro usuário.
+            ),
+          );
         }
-
-        // Atualiza o marcador do ônibus no mapa com a nova posição.
-        _updateMarker(
-          Marker(
-            markerId: const MarkerId('bus_location'),
-            position: busPosition,
-            infoWindow: InfoWindow(
-                title: widget.driverId), // O título do marcador será o nome do motorista.
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueAzure), // Marcador azul.
-          ),
-        );
       }
     }, onError: (error) {
       // Callback para lidar com erros durante a escuta.
@@ -224,9 +236,9 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Barra no topo da tela (AppBar).
-      appBar: AppBar(
-          title:
-              Text(widget.driverId != null ? 'Rota: ${widget.driverId}' : 'Mapa')),
+      appBar: AppBar(title: Text(widget.trackedUserId != null
+          ? 'Localização de ${widget.trackedUserId}'
+          : 'Mapa')),
       // O corpo da tela será o mapa do Google.
       body: GoogleMap(
         // Callback para quando o mapa for criado.
@@ -261,9 +273,9 @@ class _MapPageState extends State<MapPage> {
           // Botão para centralizar na rota (usuário rastreado).
           FloatingActionButton(
             onPressed: _centerOnTrackedUser,
-            tooltip: 'Localizar Rota',
-            child: const Icon(Icons.directions_bus),
-            heroTag: 'busLocation',
+            tooltip: 'Localizar Usuário',
+            child: const Icon(Icons.person_pin_circle), // Ícone mais apropriado
+            heroTag: 'trackedUserLocation',
           ),
         ],
       ),

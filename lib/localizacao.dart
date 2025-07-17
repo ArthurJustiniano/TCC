@@ -174,12 +174,12 @@ class RouteExamplesPage extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     // Passando o ID do motorista para o mapa
-                                    builder: (context) => MapPage(driverId: 'James'),
+                                    builder: (context) => const MapPage(trackedUserId: 'James'),
                                   ),
                                 );
                               },
                               child: const Text(
-                                'Ver Localização do Ônibus',
+                                'Ver Localização',
                                 style: TextStyle(color: Color.fromARGB(255, 250, 250, 250)),
                               ),
                             ),
@@ -230,13 +230,13 @@ class RouteExamplesPage extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     // Passando o ID do motorista para o mapa
-                                    builder: (context) => MapPage(driverId: 'Leandro'),
+                                    builder: (context) => const MapPage(trackedUserId: 'Leandro'),
                                   ),
                             
                                 );
                               },
                               child: const Text(
-                                'Ver Localização do Ônibus',
+                                'Ver Localização',
                                 style: TextStyle(color: Color.fromARGB(255, 247, 247, 247)),
                               ),
                             ),
