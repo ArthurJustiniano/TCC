@@ -1,64 +1,6 @@
+import 'package:app_flutter/user_profile_data.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-void main() {
-  runApp(
-    ChangeNotifierProvider<UserProfileData>(
-      create: (context) => UserProfileData(),
-      builder: (context, child) => const MyApp(),
-    ),
-  );
-}
-
-class UserProfileData extends ChangeNotifier {
-  UserProfileData()
-      : name = 'João da Silva',
-        email = 'joao.silva@exemplo.com',
-        phone = '123-456-7890',
-        monthlyPayments = {
-          'Jan': false,
-          'Fev': false,
-          'Mar': false,
-          'Abr': false,
-          'Mai': false,
-          'Jun': false,
-          'Jul': false,
-          'Ago': false,
-          'Set': false,
-          'Out': false,
-          'Nov': false,
-          'Dez': false,
-        };
-
-  String name;
-  String email;
-  String phone;
-  Map<String, bool> monthlyPayments;
-
-  void togglePayment(String month, bool? newValue) {
-    if (newValue != null) {
-      monthlyPayments[month] = newValue;
-      notifyListeners();
-    }
-  }
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Perfil do Usuário',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
-      home: const UserProfileScreen(),
-    );
-  }
-}
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});

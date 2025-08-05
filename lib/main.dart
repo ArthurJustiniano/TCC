@@ -1,8 +1,11 @@
+import 'package:app_flutter/user_profile_data.dart';
 import 'package:flutter/material.dart';
 import 'package:app_flutter/localizacao.dart' as localizacao;
 import 'package:app_flutter/carteirinha.dart' as carteirinha;
 import 'package:app_flutter/chatpage.dart' as chatpage;
+import 'package:app_flutter/maispage.dart' as maispage;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 String nomeUsuario = "DAVI";
@@ -14,8 +17,12 @@ Future<void> main() async {
   // Inicializa o Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Agora que os dados vêm do Firebase, não precisamos mais do Provider aqui.
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => UserProfileData(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -48,6 +55,7 @@ class _MainTabsState extends State<MainTabs> {
       username: nomeUsuario,
       wsUrl: websocket,
     ),
+    maispage.Maispage()
   ];
 
   void _onItemTapped(int index) {
@@ -77,6 +85,10 @@ class _MainTabsState extends State<MainTabs> {
           BottomNavigationBarItem(
             icon: Icon(Icons.chat),
             label: 'Bate-papo',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.more_horiz),
+            label: 'Mais',
           ),
         ],
       ),
