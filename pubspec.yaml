@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  http: ^1.2.0
   web_socket_channel: ^3.0.3
   google_maps_flutter: ^2.12.3
   geolocator: ^10.1.0
@@ -44,6 +45,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   intl: ^0.20.2
   provider: ^6.1.5
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

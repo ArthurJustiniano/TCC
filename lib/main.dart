@@ -18,8 +18,9 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
+    
     ChangeNotifierProvider(
-      create: (context) => UserProfileData(),
+      create: (context) => UserProfileData() ,
       child: const MyApp(),
     ),
   );
