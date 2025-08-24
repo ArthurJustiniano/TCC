@@ -8,9 +8,9 @@ Future<String> cadastrar(String nome, String email, String senha) async {
   var url = Uri.parse("http://192.168.0.108/tcc_api/cadastro.php"); // Substitua pelo URL do seu servidor
 
   var response = await http.post(url, body: {
-    "nome_passageiro": nome,
-    "email_passageiro": email,
-    "senha_passageiro": senha,
+    "nome_usuario": nome,
+    "email_usuario": email,
+    "senha_usuario": senha,
   });
 
   final data = jsonDecode(response.body);
@@ -70,7 +70,7 @@ class _CadastroState extends State<Cadastro> {
   Widget build(BuildContext context) {
     // AGORA RETORNA UM SCAFFOLD DIRETAMENTE
     return Scaffold(
-      backgroundColor: const Color(0xFFB4DEFF),
+      backgroundColor: const Color.fromARGB(255, 200, 213, 221),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -83,7 +83,7 @@ class _CadastroState extends State<Cadastro> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     const Text(
-                      'Asseumir',
+                      'RotaFácil',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -110,6 +110,7 @@ class _CadastroState extends State<Cadastro> {
                         filled: true,
                         fillColor: Colors.white,
                         labelText: 'Name',
+                        labelStyle: TextStyle(color: Colors.black),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                           borderSide: BorderSide.none,
@@ -131,6 +132,7 @@ class _CadastroState extends State<Cadastro> {
                         filled: true,
                         fillColor: Colors.white,
                         labelText: 'Email',
+                        labelStyle: TextStyle(color: Colors.black),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.0)),
                           borderSide: BorderSide.none,
@@ -154,8 +156,9 @@ class _CadastroState extends State<Cadastro> {
                       builder: (context, registrationData, child) => TextFormField(
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: const Color.fromARGB(255, 253, 253, 253),
                           labelText: 'Password',
+                          labelStyle: TextStyle(color: Colors.black),
                           border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(8.0)),
                             borderSide: BorderSide.none,
@@ -216,20 +219,26 @@ class _CadastroState extends State<Cadastro> {
                       child: const Text('Cadastrar'),
                     ),
                     
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF2DAAF0),
-                        minimumSize: const Size(double.infinity, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF2DAAF0),
+                          minimumSize: const Size(double.infinity, 50),
+                          
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                            
+                          ),
                         ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Voltar para o Login'),
+                        
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Voltar para o Login'),
                     ),
                   ],
                 ),

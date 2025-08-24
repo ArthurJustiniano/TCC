@@ -8,18 +8,18 @@ if ($conn->connect_error) {
     die(json_encode(["status" => "error", "message" => "Erro na conexão com o banco"]));
 }
 
-$nome = $_POST["nome_passageiro"];
-$email = $_POST["email_passageiro"];
-$senha = $_POST["senha_passageiro"];
+$nome = $_POST["nome_usuario"];
+$email = $_POST["email_usuario"];
+$senha = $_POST["senha_usuario"];
 
 // verifica se já existe usuário
-$sql = "SELECT * FROM Passageiro WHERE email_passageiro='$email'";
+$sql = "SELECT * FROM Usuario WHERE email_usuario='$email'";
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
     echo json_encode(["status" => "error", "message" => "Usuário já cadastrado"]);
 } else {
-    $sql = "INSERT INTO Passageiro (nome_passageiro, email_passageiro, senha_passageiro) VALUES ('$nome', '$email', '$senha')";
+    $sql = "INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, tipo_usuario) VALUES ('$nome', '$email', '$senha', 1)";
     if ($conn->query($sql) === TRUE) {
         echo json_encode(["status" => "success", "message" => "Cadastro realizado com sucesso"]);
     } else {
