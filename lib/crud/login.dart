@@ -1,34 +1,44 @@
+import 'package:app_flutter/crud/cadastro.dart';
+import 'package:app_flutter/PaginaPrincipal.dart';
+import 'package:app_flutter/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:app_flutter/main.dart';
-import 'package:app_flutter/crud/cadastro.dart';
 
-void main() {
-  runApp(
-    MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (context) => LoginData()),
-      ChangeNotifierProvider(create: (context) => RegistrationData()),
-      
-    ],
-      child: const Login(),
-    ),
-  );
-}
+// Emulador Android conversando com XAMPP local:
+const String kApiBase = 'http://10.0.2.2/tcc_api'; 
+// Se for aparelho físico, use o IP da sua máquina na rede, ex: 'http://192.168.0.10/tcc_api'
+final Uri kLoginUrl = Uri.parse('$kApiBase/login.php');
 
-Future<String> login(String email, String senha) async {
-  var url = Uri.parse("http://192.168.0.108/tcc_api/cadastro.php"); // Substitua pelo URL do seu servidor
+Future<Map<String, dynamic>> login(String email, String senha) async {
+  try {
+    final resposta = await http.post(
+      kLoginUrl,
+      headers: {
+        'Accept': 'application/json',
+      },
+      body: {
+        'email_usuario': email,
+        'senha_usuario': senha,
+      },
+    );
 
-  var response = await http.post(url, body: {
-    "email": email,
-    "senha": senha,
-  });
+    final raw = resposta.body.trim();
 
-  var data = jsonDecode(response.body);
+    Map<String, dynamic> data;
+    try {
+      data = jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      debugPrint('Resposta não-JSON do servidor:\n$raw');
+      return {'status': 'error', 'message': 'Erro: resposta inválida do servidor. Resposta: $raw'};
+    }
 
-  return data["message"];
+    return data;
+  } catch (e) {
+    debugPrint('Exceção no login: $e');
+    return {'status': 'error', 'message': 'Erro de conexão: $e'};
+  }
 }
 
 
@@ -71,16 +81,6 @@ class LoginData extends ChangeNotifier {
     }
     return null;
   }
-
-  bool validateForm() {
-    return validateEmail(email) == null && validatePassword(password) == null;
-  }
-
-  void submitForm() {
-    if (validateForm()) {
-      print('Email: $email, Password: $password');
-    }
-  }
 }
 
 class Login extends StatelessWidget {
@@ -88,29 +88,35 @@ class Login extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Login App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide.none,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginData()),
+        ChangeNotifierProvider(create: (_) => UserData()),
+      ],
+      child: MaterialApp(
+        title: 'Login App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          inputDecorationTheme: InputDecorationTheme(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: Colors.blue.shade100,
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 10.0,
+              horizontal: 16.0,
+            ),
+            labelStyle: const TextStyle(color: Colors.blue),
           ),
-          filled: true,
-          fillColor: Colors.blue.shade100,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 10.0,
-            horizontal: 16.0,
-          ),
-          labelStyle: const TextStyle(color: Colors.blue),
         ),
-      ),
-      home: const LoginPage(),
-      routes: {
-        "/home": (context) => const MainTabs(),
-      },
+        home: const LoginPage(),
+        routes: {
+          "/home": (context) => const PaginaPrincipal(),
+        },
 
+      ),
     );
   }
 }
@@ -141,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   const Text(
-                    'Asseumir',
+                    'Assumir',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 32.0,
@@ -218,26 +224,25 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     onPressed: ()async {
                       if (_formKey.currentState!.validate()) {
-                        Provider.of<LoginData>(context, listen: false)
-                            .submitForm();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Processing Data')),
+                        Map<String, dynamic> data = await login(
+                          context.read<LoginData>().email,
+                          context.read<LoginData>().password,
                         );
+
+                        final status = (data['status'] ?? '').toString().toLowerCase();
+                        final msg = (data['message'] ?? 'Erro desconhecido').toString();
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(msg)),
+                        );
+
+                        if (status == 'success') {
+                          final userId = data['id_usuario'].toString();
+                          final userName = data['nome_usuario'].toString();
+                          Provider.of<UserData>(context, listen: false).setUser(userId, userName);
+                          Navigator.pushReplacementNamed(context, "/home");
+                        }
                       }
-
-                      String mensagem = await login(
-                        context.read<LoginData>().email,
-                        context.read<LoginData>().password,
-                      );
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(mensagem)),
-                      );
-
-                      if (mensagem.contains("sucesso")) {
-                        Navigator.pushReplacementNamed(context, "/home");
-                      }
-
                     },
                     child: const Text('Logar'),
                   ),
@@ -255,7 +260,10 @@ class _LoginPageState extends State<LoginPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const Cadastro(),
+                            builder: (_) => ChangeNotifierProvider(
+                              create: (_) => RegistrationData(),
+                              child: const Cadastro(),
+                            ),
                           ),
                         );
                       },

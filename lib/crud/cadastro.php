@@ -1,5 +1,5 @@
 <?php
-header("Content-Type: application/json");
+header("Content-Type: application/json; charset=UTF-8");
 
 // conexão com o banco
 $conn = new mysqli("localhost", "root", "", "rotafacil_bd");
