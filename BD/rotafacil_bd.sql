@@ -57,6 +57,14 @@ CREATE TABLE Chat (
     FOREIGN KEY (cod_motorista) REFERENCES Usuario(id_Usuario)
 );
 
+-- Tabela Localizacoes
+CREATE TABLE localizacoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    latitude DOUBLE NOT NULL,
+    longitude DOUBLE NOT NULL,
+    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- INSERTS
 
 -- usuarios (passageiros)
