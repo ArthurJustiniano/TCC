@@ -21,12 +21,16 @@ class _MapPageState extends State<MapPage> {
   double lat = -20.834999;
   double long = -49.488359;
   LatLng? _trackedUserPosition;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _centerOnUserLocation();
     _fetchPontos();
+    if (widget.trackedUserId != null) {
+      _startTrackingMotorista(widget.trackedUserId!);
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -139,8 +143,35 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  void _startTrackingMotorista(String motoristaId) {
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+      _fetchMotoristaLocation(motoristaId);
+    });
+  }
+
+  Future<void> _fetchMotoristaLocation(String motoristaId) async {
+    final response = await http.get(
+      Uri.parse('http://127.0.0.1:5000/motorista/$motoristaId'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      LatLng pos = LatLng(data['latitude'], data['longitude']);
+      setState(() {
+        _markers.removeWhere((m) => m.markerId.value == 'motorista');
+        _markers.add(Marker(
+          markerId: MarkerId('motorista'),
+          position: pos,
+          infoWindow: InfoWindow(title: 'Motorista'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        ));
+        mapController.animateCamera(CameraUpdate.newLatLng(pos));
+      });
+    }
+  }
+
   @override
   void dispose() {
+    _timer?.cancel();
     super.dispose();
   }
 
