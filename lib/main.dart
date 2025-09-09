@@ -1,19 +1,25 @@
-import 'package:app_flutter/user_profile_data.dart';
 import 'package:flutter/material.dart';
-import 'package:app_flutter/localizacao.dart' as localizacao;
-import 'package:app_flutter/carteirinha.dart' as carteirinha;
-import 'package:app_flutter/chatpage.dart' as chatpage;
-import 'package:app_flutter/maispage.dart' as maispage;
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:app_flutter/PaginaPrincipal.dart';
 import 'package:app_flutter/crud/login.dart';
 
-bool isLoggedIn = false; 
+const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
+
+bool isLoggedIn = false;
+
+final supabase = Supabase.instance.client;
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseKey,
+  );
+  
   // Garante que os widgets do Flutter estão prontos
   WidgetsFlutterBinding.ensureInitialized();
   // Inicializa o Firebase

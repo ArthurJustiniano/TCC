@@ -1,46 +1,47 @@
 import 'package:app_flutter/crud/cadastro.dart';
 import 'package:app_flutter/PaginaPrincipal.dart';
 import 'package:app_flutter/user_data.dart';
+import 'package:app_flutter/crud/esqueci_senha.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
 
 // Emulador Android conversando com XAMPP local:
 const String kApiBase = 'http://10.0.2.2/tcc_api'; 
 // Se for aparelho físico, use o IP da sua máquina na rede, ex: 'http://192.168.0.10/tcc_api'
 final Uri kLoginUrl = Uri.parse('$kApiBase/login.php');
 
+final supabase = Supabase.instance.client;
+
 Future<Map<String, dynamic>> login(String email, String senha) async {
   try {
-    final resposta = await http.post(
-      kLoginUrl,
-      headers: {
-        'Accept': 'application/json',
-      },
-      body: {
-        'email_usuario': email,
-        'senha_usuario': senha,
-      },
-    );
+    final response = await supabase
+        .from('usuario') // Corrigido para letras minúsculas
+        .select()
+        .eq('email_usuario', email)
+        .eq('senha_usuario', senha)
+        .maybeSingle();
 
-    final raw = resposta.body.trim();
-
-    Map<String, dynamic> data;
-    try {
-      data = jsonDecode(raw) as Map<String, dynamic>;
-    } catch (_) {
-      debugPrint('Resposta não-JSON do servidor:\n$raw');
-      return {'status': 'error', 'message': 'Erro: resposta inválida do servidor. Resposta: $raw'};
+    if (response == null || response.isEmpty) {
+      return {'status': 'error', 'message': 'Credenciais inválidas. Tente novamente.'};
     }
 
-    return data;
+    return {
+      'status': 'success',
+      'message': 'Login realizado com sucesso!',
+      'id_usuario': response['id_usuario'],
+      'nome_usuario': response['nome_usuario']
+    };
   } catch (e) {
-    debugPrint('Exceção no login: $e');
+    debugPrint('Erro no login: $e');
     return {'status': 'error', 'message': 'Erro de conexão: $e'};
   }
 }
-
 
 class LoginData extends ChangeNotifier {
   String email = '';
@@ -279,93 +280,3 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class ForgotPasswordPage extends StatefulWidget {
-  const ForgotPasswordPage({super.key});
-
-  @override
-  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
-}
-
-class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  final _formKey = GlobalKey<FormState>();
-  String email = '';
-
-  String? validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your email';
-    }
-    if (!value.contains('@')) {
-      return 'Please enter a valid email';
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blue.shade200,
-      appBar: AppBar(
-        backgroundColor: Colors.blue.shade300,
-        title: const Text('Forgot Password'),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const Text(
-                    'Enter your email to reset your password',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: validateEmail,
-                    onChanged: (value) => setState(() {
-                      email = value;
-                    }),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      textStyle: const TextStyle(fontSize: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        print('Reset password for email: $email');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Password reset email sent')),
-                        );
-                      }
-                    },
-                    child: const Text('Reset Password'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

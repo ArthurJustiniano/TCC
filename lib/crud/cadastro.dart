@@ -2,20 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
+
+final supabase = Supabase.instance.client;
 
 Future<String> cadastrar(String nome, String email, String senha) async {
-  var url = Uri.parse("http://192.168.0.108/tcc_api/cadastro.php"); // Substitua pelo URL do seu servidor
+  try {
+    final response = await supabase
+        .from('usuario') // Corrigido para letras minúsculas
+        .insert({
+          'nome_usuario': nome,
+          'email_usuario': email,
+          'senha_usuario': senha,
+          'tipo_usuario': 1, // Definindo o tipo de usuário como padrão
+          'pagamento_status': 'PENDENTE',
+        });
 
-  var response = await http.post(url, body: {
-    "nome_usuario": nome,
-    "email_usuario": email,
-    "senha_usuario": senha,
-  });
-
-  final data = jsonDecode(response.body);
-
-  return data["message"];
+    return 'Cadastro realizado com sucesso!';
+  } catch (e) {
+    debugPrint('Erro no cadastro: $e');
+    return 'Erro de conexão: $e';
+  }
 }
 
 class RegistrationData extends ChangeNotifier {
