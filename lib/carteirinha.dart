@@ -1,21 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart' as intl;
 import 'package:intl/intl.dart';
-import 'package:app_flutter/chatpage.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await intl.initializeDateFormatting('pt_BR', null);
-  } catch (e) {
-    print('Error initializing locale: $e');
-    // Handle the error appropriately, e.g., by falling back to a default locale
-  }
-  runApp(const carteirinha_page());
-}
-
-class carteirinha_page extends StatelessWidget {
-  const carteirinha_page({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +20,10 @@ class DigitalCardScreen extends StatefulWidget {
   const DigitalCardScreen({super.key});
 
   @override
-  State<DigitalCardScreen> createState() => _DigitalCardScreenState();
+  State<DigitalCardScreen> createState() => carteirinha_page();
 }
 
-class _DigitalCardScreenState extends State<DigitalCardScreen> {
+class carteirinha_page extends State<DigitalCardScreen> {
   final String userName = "Usuario Teste";
   final String cardId = "1234567890";
   List<bool> paymentStatus = List.generate(12, (index) => index < 7);
@@ -125,11 +112,10 @@ class _DigitalCardScreenState extends State<DigitalCardScreen> {
                         itemBuilder: (context, index) {
                           String month = '';
                           try {
-                            // Certifique-se de que o locale 'pt_BR' foi inicializado no main()
-                            month = DateFormat.MMM('pt_BR').format(DateTime(2024, index + 1));
+                            month = DateFormat('MMM', 'pt_BR').format(DateTime(2024, index + 1));
                           } catch (e) {
-                            debugPrint('Erro ao formatar a data: $e');
-                            month = 'M${index + 1}'; // Valor de fallback
+                            print('Error formatting date: $e');
+                            month = 'M${index + 1}'; // Fallback value
                           }
                           return MonthPaymentStatus(
                             month: month,
