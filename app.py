@@ -1,48 +1,89 @@
-# Este é um exemplo de código que ficaria no seu servidor (backend)
-
 from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 
+# 1. Inicialização do App e do SQLAlchemy
 app = Flask(__name__)
 
-# Um "banco de dados" simples em memória para o exemplo
-motoristas_db = {
-    "ID_MOTORISTA_1": {"nome": "Carlos", "latitude": 0.0, "longitude": 0.0},
-    "ID_MOTORISTA_2": {"nome": "Ana", "latitude": 0.0, "longitude": 0.0},
-}
+# 2. Configuração da Conexão com o Banco de Dados MySQL
+# Formato: 'mysql+pymysql://<usuario>:<senha>@<host>/<nome_do_banco>'
+# Substitua 'seu_usuario' e 'sua_senha' pelos seus dados do MySQL.
+# Se o MySQL estiver rodando na mesma máquina, o host é 'localhost'.
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://seu_usuario:sua_senha@localhost/rotafacil_bd'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Este é o endpoint que o seu app Flutter chama com o método POST
+db = SQLAlchemy(app)
+
+
+# 3. Modelo de Dados (Mapeamento da Tabela 'motoristas')
+# Esta classe representa a tabela 'motoristas' no seu banco de dados.
+class Motorista(db.Model):
+    __tablename__ = 'motoristas'
+    id = db.Column(db.String(50), primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    latitude = db.Column(db.Float, default=0.0)
+    longitude = db.Column(db.Float, default=0.0)
+
+    # Função auxiliar para converter o objeto em um dicionário (JSON)
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nome': self.nome,
+            'latitude': self.latitude,
+            'longitude': self.longitude
+        }
+
+
+# 4. Rota para o Passageiro OBTER a localização (GET)
+# Esta rota busca o motorista no banco de dados e retorna sua localização.
+@app.route('/motorista/<string:id_do_motorista>', methods=['GET'])
+def obter_localizacao(id_do_motorista):
+    # db.session.get() é a forma moderna de buscar pela chave primária
+    motorista = db.session.get(Motorista, id_do_motorista)
+    
+    if motorista:
+        # Se encontrou, retorna os dados do motorista em formato JSON
+        return jsonify(motorista.to_dict())
+    else:
+        # Se não encontrou, retorna um erro 404
+        return jsonify({"erro": "Motorista não encontrado no banco de dados"}), 404
+
+
+# 5. Rota para o Motorista ENVIAR a localização (POST)
+# Esta rota atualiza a localização de um motorista no banco de dados.
 @app.route('/motorista/<string:id_do_motorista>/localizacao', methods=['POST'])
 def atualizar_localizacao(id_do_motorista):
-    # 1. Verifica se o motorista existe
-    if id_do_motorista not in motoristas_db:
-        return jsonify({"erro": "Motorista não encontrado"}), 404
+    motorista = db.session.get(Motorista, id_do_motorista)
+    
+    if not motorista:
+        return jsonify({"erro": "Motorista não encontrado para atualizar"}), 404
 
-    # 2. Pega os dados JSON enviados pelo app
     dados = request.get_json()
     if not dados or 'latitude' not in dados or 'longitude' not in dados:
         return jsonify({"erro": "Dados de localização inválidos"}), 400
 
-    # 3. Atualiza a localização no "banco de dados"
-    motoristas_db[id_do_motorista]['latitude'] = dados['latitude']
-    motoristas_db[id_do_motorista]['longitude'] = dados['longitude']
+    # Atualiza os campos do objeto motorista
+    motorista.latitude = dados['latitude']
+    motorista.longitude = dados['longitude']
+    
+    # Salva (commita) as alterações no banco de dados
+    db.session.commit()
 
-    print(f"Localização do motorista {id_do_motorista} atualizada!")
-    print(f"-> Novas coordenadas: {dados['latitude']}, {dados['longitude']}")
-
-    # 4. Envia uma resposta de sucesso para o app
+    print(f"Localização do motorista {id_do_motorista} atualizada no banco de dados!")
     return jsonify({"mensagem": "Localização atualizada com sucesso"}), 200
 
 
-# Este seria o endpoint que o app do PASSAGEIRO usaria para buscar a localização
-@app.route('/motorista/<string:id_do_motorista>', methods=['GET'])
-def obter_localizacao(id_do_motorista):
-    if id_do_motorista in motoristas_db:
-        # Retorna os dados de localização para o app do passageiro
-        return jsonify(motoristas_db[id_do_motorista])
-    else:
-        return jsonify({"erro": "Motorista não encontrado"}), 404
+# Rota para buscar os pontos (exemplo, se você também tiver no DB)
+@app.route('/pontos', methods=['GET'])
+def obter_pontos():
+    # Esta é uma implementação de exemplo. Você precisaria criar um modelo para 'pontos'.
+    pontos_exemplo = [
+        {"id_ponto": 1, "latitude": -20.83, "longitude": -49.48, "descricao": "Ponto A"},
+        {"id_ponto": 2, "latitude": -20.84, "longitude": -49.49, "descricao": "Ponto B"}
+    ]
+    return jsonify(pontos_exemplo)
+
 
 if __name__ == '__main__':
-    # Roda o servidor, escutando na porta 5000
+    # O host='0.0.0.0' é crucial para que o servidor seja acessível na sua rede local
     app.run(host='0.0.0.0', port=5000, debug=True)
 

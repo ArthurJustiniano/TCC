@@ -59,12 +59,17 @@ CREATE TABLE Chat (
 );
 
 -- Tabela Localizacoes
-CREATE TABLE localizacoes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    latitude DOUBLE NOT NULL,
-    longitude DOUBLE NOT NULL,
-    ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE motoristas (
+    id VARCHAR(50) PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    latitude DOUBLE,
+    longitude DOUBLE
 );
+
+-- Opcional: Inserir os motoristas iniciais
+INSERT INTO motoristas (id, nome, latitude, longitude) VALUES ('James', 'James', 0.0, 0.0);
+INSERT INTO motoristas (id, nome, latitude, longitude) VALUES ('Leandro', 'Leandro', 0.0, 0.0);
+
 
 -- INSERTS
 

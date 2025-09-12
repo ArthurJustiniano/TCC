@@ -143,12 +143,30 @@ class _MapPageState extends State<MapPage> {
   /// Para o Passageiro: busca a localização do motorista do servidor.
   void _startTrackingMotorista(String motoristaId) {
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      http.Response response;
       try {
-        final response = await http.get(Uri.parse('$_baseUrl/motorista/$motoristaId'));
+        // 1. Tenta fazer a requisição de rede
+        response = await http.get(Uri.parse('$_baseUrl/motorista/$motoristaId'));
+      } catch (e) {
+        // ERRO DE REDE: O app não conseguiu se conectar ao servidor (IP, Firewall, Wi-Fi)
+        debugPrint('ERRO DE REDE ao buscar localização: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Falha de conexão com o servidor. Verifique o IP e o Firewall.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return; // Para a execução aqui
+      }
 
-        if (!mounted) return;
+      if (!mounted) return;
 
-        if (response.statusCode == 200) {
+      // 2. Verifica se o servidor respondeu com sucesso
+      if (response.statusCode == 200) {
+        try {
+          // 3. Tenta processar os dados recebidos
           final data = jsonDecode(response.body);
           final LatLng motoristaPosition = LatLng(data['latitude'], data['longitude']);
 
@@ -160,27 +178,23 @@ class _MapPageState extends State<MapPage> {
               icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
             ),
           );
-        } else {
-          debugPrint('Erro ao buscar localização do motorista: ${response.statusCode}');
-          // MELHORIA: Adiciona feedback visual para o usuário em caso de erro do servidor.
-          // Isso ajuda a diagnosticar se o servidor está rodando, mas não encontra o motorista.
+          // MELHORIA: Centraliza a câmera no motorista para confirmar visualmente a recepção dos dados.
+          mapController.animateCamera(CameraUpdate.newLatLng(motoristaPosition));
+        } catch (e) {
+          // ERRO DE DADOS: O app recebeu uma resposta, mas o formato é inválido.
+          debugPrint('ERRO DE PARSING de dados: $e');
+          debugPrint('DADOS RECEBIDOS: ${response.body}'); // Imprime o que o servidor enviou
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Não foi possível obter a localização (Erro: ${response.statusCode})'),
-                backgroundColor: Colors.orange[800],
-              ),
-            );
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Dados recebidos do servidor são inválidos.')));
           }
         }
-      } catch (e) {
-        debugPrint('Erro de conexão ao buscar localização: $e');
+      } else {
+        // ERRO DE SERVIDOR: O servidor respondeu, mas com um erro (404, 500, etc.)
+        debugPrint('ERRO DE SERVIDOR: ${response.statusCode}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erro de conexão ao buscar localização.'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Servidor respondeu com erro ${response.statusCode}.')),
           );
         }
       }
