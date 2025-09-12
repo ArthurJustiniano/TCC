@@ -1,4 +1,5 @@
 CREATE DATABASE rotafacil_bd;
+
 USE rotafacil_bd;
 
 -- Tabela usuario

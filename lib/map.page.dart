@@ -6,10 +6,18 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 
+// Boas práticas: Centralizar constantes da API e IDs dos marcadores.
+// IMPORTANTE: Substitua '127.0.0.1' pelo IP do seu computador na rede
+// (ex: '192.168.1.5') ou '10.0.2.2' se estiver usando um emulador Android.
+const String _baseUrl = 'http://127.0.0.1:5000';
+const String _userMarkerId = 'user_location';
+const String _driverMarkerId = 'driver_location';
+
 class MapPage extends StatefulWidget {
   final String? trackedUserId;
+  final bool isDriver;
 
-  const MapPage({super.key, this.trackedUserId});
+  const MapPage({super.key, this.trackedUserId, this.isDriver = false});
 
   @override
   _MapPageState createState() => _MapPageState();
@@ -18,9 +26,8 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   late GoogleMapController mapController;
   final Set<Marker> _markers = {};
-  double lat = -20.834999;
-  double long = -49.488359;
-  LatLng? _trackedUserPosition;
+  // Posição inicial do mapa (ex: centro da cidade)
+  final LatLng _initialCameraPosition = const LatLng(-20.834999, -49.488359);
   Timer? _timer;
 
   @override
@@ -29,7 +36,11 @@ class _MapPageState extends State<MapPage> {
     _centerOnUserLocation();
     _fetchPontos();
     if (widget.trackedUserId != null) {
-      _startTrackingMotorista(widget.trackedUserId!);
+      if (widget.isDriver) {
+        _startSendingLocation(widget.trackedUserId!);
+      } else {
+        _startTrackingMotorista(widget.trackedUserId!);
+      }
     }
   }
 
@@ -93,7 +104,7 @@ class _MapPageState extends State<MapPage> {
 
       _updateMarker(
           Marker(
-            markerId: const MarkerId('user_location'),
+            markerId: const MarkerId(_userMarkerId),
             position: userLocation,
             infoWindow: const InfoWindow(title: 'Sua Posição'),
             icon:
@@ -112,20 +123,13 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  void _centerOnTrackedUser() {
-    if (_trackedUserPosition != null && mounted) {
-      mapController
-          .animateCamera(CameraUpdate.newLatLngZoom(_trackedUserPosition!, 16.0));
-    }
-  }
-
   Future<void> _fetchPontos() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:5000/pontos'));
+      final response = await http.get(Uri.parse('$_baseUrl/pontos'));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         setState(() {
-          _markers.clear();
+          // BUG FIX: Não limpa os marcadores para não remover o do usuário/motorista.
           for (var ponto in data) {
             final marker = Marker(
               markerId: MarkerId(ponto['id_ponto'].toString()),
@@ -136,36 +140,102 @@ class _MapPageState extends State<MapPage> {
           }
         });
       } else {
-        print('Erro ao buscar pontos: ${response.statusCode}');
+        debugPrint('Erro ao buscar pontos: ${response.statusCode}');
       }
     } catch (e) {
-      print('Erro ao buscar pontos: $e');
+      debugPrint('Erro ao buscar pontos: $e');
     }
   }
 
+  /// Para o Passageiro: busca a localização do motorista do servidor.
   void _startTrackingMotorista(String motoristaId) {
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
-      _fetchMotoristaLocation(motoristaId);
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      try {
+        final response = await http.get(Uri.parse('$_baseUrl/motorista/$motoristaId'));
+
+        if (!mounted) return;
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final LatLng motoristaPosition = LatLng(data['latitude'], data['longitude']);
+
+          _updateMarker(
+            Marker(
+              markerId: const MarkerId(_driverMarkerId),
+              position: motoristaPosition,
+              infoWindow: const InfoWindow(title: 'Localização do Motorista'),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            ),
+          );
+        } else {
+          debugPrint('Erro ao buscar localização do motorista: ${response.statusCode}');
+        }
+      } catch (e) {
+        debugPrint('Erro de conexão ao buscar localização: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erro de conexão ao buscar localização.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     });
   }
 
-  Future<void> _fetchMotoristaLocation(String motoristaId) async {
-    final response = await http.get(
-      Uri.parse('http://127.0.0.1:5000/motorista/$motoristaId'),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      LatLng pos = LatLng(data['latitude'], data['longitude']);
-      setState(() {
-        _markers.removeWhere((m) => m.markerId.value == 'motorista');
-        _markers.add(Marker(
-          markerId: MarkerId('motorista'),
-          position: pos,
-          infoWindow: InfoWindow(title: 'Motorista'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+  /// Para o Motorista: envia a própria localização para o servidor.
+  void _startSendingLocation(String myDriverId) {
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      final Position? position = await _getCurrentLocation();
+      if (position != null) {
+        // 1. Atualiza o marcador no próprio mapa do motorista
+        final myLocation = LatLng(position.latitude, position.longitude);
+        _updateMarker(
+          Marker(
+            markerId: const MarkerId(_driverMarkerId),
+            position: myLocation,
+            infoWindow: const InfoWindow(title: 'Sua Posição (Motorista)'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          ),
+        );
+        mapController.animateCamera(CameraUpdate.newLatLng(myLocation));
+
+        // 2. Envia a localização para o servidor
+        _postLocationToServer(position, myDriverId);
+      }
+    });
+  }
+
+  Future<void> _postLocationToServer(Position position, String driverId) async {
+    final url = Uri.parse('$_baseUrl/motorista/$driverId/localizacao');
+    final headers = {"Content-Type": "application/json"};
+    final body = jsonEncode({
+      'latitude': position.latitude,
+      'longitude': position.longitude,
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200) {
+        debugPrint('Localização enviada com sucesso.');
+      } else {
+        debugPrint('Erro ao enviar localização: ${response.statusCode}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Falha ao sincronizar localização: ${response.statusCode}'),
+            backgroundColor: Colors.orange[800],
+          ));
+        }
+      }
+    } catch (e) {
+      debugPrint('Erro de rede ao enviar localização: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Sem conexão para enviar localização.'),
+          backgroundColor: Colors.red,
         ));
-        mapController.animateCamera(CameraUpdate.newLatLng(pos));
-      });
+      }
     }
   }
 
@@ -183,13 +253,11 @@ class _MapPageState extends State<MapPage> {
       ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
-          target: LatLng(lat, long),
+          target: _initialCameraPosition,
           zoom: 14.0,
         ),
         markers: _markers,
-        onMapCreated: (controller) {
-          mapController = controller;
-        },
+        onMapCreated: _onMapCreated,
       ),
     );
   }

@@ -44,7 +44,7 @@ class OrangeBanner extends StatelessWidget {
       child: Column(
         children: const [
           Icon(Icons.directions_bus, size: 50, color: Colors.white),
-          Text('Assumir', style: TextStyle(fontSize: 24, color: Colors.white)),
+          Text('RotaFácil', style: TextStyle(fontSize: 24, color: Colors.white)),
           Text(
             'Acompanhe em tempo real',
             style: TextStyle(fontSize: 16, color: Colors.white),
@@ -174,7 +174,10 @@ class RouteExamplesPage extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     // Passando o ID do motorista para o mapa
-                                    builder: (context) => const MapPage(trackedUserId: 'James'),
+                                    builder: (context) => const MapPage(
+                                      trackedUserId: 'James',
+                                      isDriver: false, // Modo Passageiro
+                                    ),
                                   ),
                                 );
                               },
@@ -230,7 +233,10 @@ class RouteExamplesPage extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     // Passando o ID do motorista para o mapa
-                                    builder: (context) => const MapPage(trackedUserId: 'Leandro'),
+                                    builder: (context) => const MapPage(
+                                      trackedUserId: 'Leandro',
+                                      isDriver: false, // Modo Passageiro
+                                    ),
                                   ),
                             
                                 );

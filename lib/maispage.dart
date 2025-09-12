@@ -1,6 +1,7 @@
 import 'package:app_flutter/usuariopage.dart' as usuariopage;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:app_flutter/map.page.dart';
 
 class Maispage extends StatelessWidget {
   const Maispage({super.key});
@@ -23,6 +24,22 @@ class Maispage extends StatelessWidget {
               );
             },
           ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.drive_eta, color: Colors.blue),
+            title: const Text('Modo Motorista (Iniciar Rota)'),
+            subtitle: const Text('Envia sua localização para os passageiros'),
+            onTap: () {
+              // TODO: Obter o ID do motorista que fez login.
+              // Por enquanto, usaremos 'James' como exemplo.
+              const driverId = 'James';
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MapPage(trackedUserId: driverId, isDriver: true)),
+              );
+            },
+          ),
+          const Divider(),
           const ListTile(
             leading: Icon(Icons.info),
             title: Text('Sobre'),

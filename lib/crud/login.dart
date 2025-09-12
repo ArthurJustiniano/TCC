@@ -109,7 +109,7 @@ class Login extends StatelessWidget {
               vertical: 10.0,
               horizontal: 16.0,
             ),
-            labelStyle: const TextStyle(color: Colors.blue),
+            labelStyle: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
           ),
         ),
         home: const LoginPage(),
@@ -148,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   const Text(
-                    'Assumir',
+                    'RotaFácil',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 32.0,
@@ -208,12 +208,13 @@ class _LoginPageState extends State<LoginPage> {
                       },
                       child: const Text(
                         'Esqueci minha senha',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
+                    
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -221,6 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                       textStyle: const TextStyle(fontSize: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.0),
+                      
                       ),
                     ),
                     onPressed: ()async {
@@ -247,6 +249,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                     child: const Text('Logar'),
                   ),
+                  const SizedBox(height: 12),
                   ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
