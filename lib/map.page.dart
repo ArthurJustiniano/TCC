@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 // Boas práticas: Centralizar constantes da API e IDs dos marcadores.
 // IMPORTANTE: Substitua '127.0.0.1' pelo IP do seu computador na rede
 // (ex: '192.168.1.5') ou '10.0.2.2' se estiver usando um emulador Android.
-const String _baseUrl = 'http://127.0.0.1:5000';
+const String _baseUrl = 'http://192.168.1.7:5000';
 const String _userMarkerId = 'user_location';
 const String _driverMarkerId = 'driver_location';
 
@@ -85,13 +85,6 @@ class _MapPageState extends State<MapPage> {
       return null;
     }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Obtendo sua localização...'),
-        backgroundColor: Colors.blue,
-      ));
-    }
-    
     return await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
@@ -169,6 +162,16 @@ class _MapPageState extends State<MapPage> {
           );
         } else {
           debugPrint('Erro ao buscar localização do motorista: ${response.statusCode}');
+          // MELHORIA: Adiciona feedback visual para o usuário em caso de erro do servidor.
+          // Isso ajuda a diagnosticar se o servidor está rodando, mas não encontra o motorista.
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Não foi possível obter a localização (Erro: ${response.statusCode})'),
+                backgroundColor: Colors.orange[800],
+              ),
+            );
+          }
         }
       } catch (e) {
         debugPrint('Erro de conexão ao buscar localização: $e');

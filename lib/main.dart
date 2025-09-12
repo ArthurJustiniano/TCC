@@ -24,7 +24,7 @@ Future<void> main() async {
   
   // Garante que os widgets do Flutter estão prontos
   WidgetsFlutterBinding.ensureInitialized();
-  // Inicializa o Firebase
+  // Inicializa o Firebase 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
 if (isLoggedIn == false) {
