@@ -5,6 +5,7 @@ class UserProfileData extends ChangeNotifier {
       : name = 'João da Silva',
         email = 'joao.silva@exemplo.com',
         phone = '123-456-7890',
+        userType = 1, // Adicionando o tipo de usuário
         monthlyPayments = {
           'Jan': false,
           'Fev': false,
@@ -23,7 +24,13 @@ class UserProfileData extends ChangeNotifier {
   String name;
   String email;
   String phone;
+  int userType; // Adicionando o campo userType
   Map<String, bool> monthlyPayments;
+
+  void updateName(String newName) {
+    name = newName;
+    notifyListeners();
+  }
 
   void togglePayment(String month, bool? newValue) {
     if (newValue != null) {

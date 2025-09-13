@@ -5,8 +5,9 @@ import 'package:app_flutter/carteirinha.dart' as carteirinha;
 import 'package:app_flutter/chatpage.dart' as chatpage;
 import 'package:app_flutter/mural.dart' as mural;
 import 'package:app_flutter/usuariopage.dart' as usuariopage;
+import 'package:app_flutter/visualizar_pagamento_page.dart';
+import 'package:provider/provider.dart';
 
-String nomeUsuario = "DAVI";
 String websocket = 'wss://seu-endereco-websocket';
 
 
@@ -33,7 +34,7 @@ class _MainDrawerState extends State<MainDrawer> {
     localizacao.BusAppHomePage(),
     const carteirinha.DigitalCardScreen(),
     chatpage.ChatPage(
-      username: nomeUsuario,
+      username: '', // Inicialmente vazio, será definido no onItemTapped
       wsUrl: websocket,
     ),
     const mural.NewsPage(),
@@ -57,6 +58,8 @@ class _MainDrawerState extends State<MainDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final userType = Provider.of<UserProfileData>(context).userType; // Obtém o tipo de usuário
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
@@ -71,7 +74,7 @@ class _MainDrawerState extends State<MainDrawer> {
                 color: Colors.blue,
               ),
               child: Text(
-                'Bem-vindo, $nomeUsuario',
+                'Bem-vindo, ${Provider.of<UserProfileData>(context).name}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -102,7 +105,20 @@ class _MainDrawerState extends State<MainDrawer> {
               leading: const Icon(Icons.person),
               title: const Text('Usuário'),
               onTap: () => _onItemTapped(4),
-            ), // Adicionando a opção de usuário no menu
+            ),
+            if (userType == 2 || userType == 3) // Verifica se é motorista ou administrador
+              ListTile(
+                leading: const Icon(Icons.payment),
+                title: const Text('Visualizar Pagamentos'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const VisualizarPagamentoPage(),
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),

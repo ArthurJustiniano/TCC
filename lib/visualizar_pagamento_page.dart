@@ -44,8 +44,6 @@ extension PaymentStatusExtension on PaymentStatus {
         return 'Pago';
       case PaymentStatus.failed:
         return 'Falhou';
-      default:
-        return 'Desconhecido';
     }
   }
 }
@@ -187,6 +185,21 @@ class PaymentDetailsScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class VisualizarPagamentoPage extends StatelessWidget {
+  const VisualizarPagamentoPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Visualizar Pagamentos'),
+        backgroundColor: Colors.blue,
+      ),
+      body: const UserListScreen(),
     );
   }
 }

@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:app_flutter/user_profile_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
@@ -18,10 +20,10 @@ final Uri kLoginUrl = Uri.parse('$kApiBase/login.php');
 
 final supabase = Supabase.instance.client;
 
-Future<Map<String, dynamic>> login(String email, String senha) async {
+Future<Map<String, dynamic>> login(String email, String senha, BuildContext context) async {
   try {
     final response = await supabase
-        .from('usuario') // Corrigido para letras minúsculas
+        .from('usuario')
         .select()
         .eq('email_usuario', email)
         .eq('senha_usuario', senha)
@@ -31,11 +33,24 @@ Future<Map<String, dynamic>> login(String email, String senha) async {
       return {'status': 'error', 'message': 'Credenciais inválidas. Tente novamente.'};
     }
 
+    // Atualiza o nome e o tipo de usuário no UserProfileData
+    final userName = response['nome_usuario'];
+    final userType = response['tipo_usuario'];
+    final userProfile = Provider.of<UserProfileData>(context, listen: false);
+    userProfile.updateName(userName);
+    userProfile.userType = userType;
+
+    // Salva as credenciais no shared_preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('email', email);
+    await prefs.setString('nome_usuario', userName);
+    await prefs.setInt('tipo_usuario', userType);
+
     return {
       'status': 'success',
       'message': 'Login realizado com sucesso!',
       'id_usuario': response['id_usuario'],
-      'nome_usuario': response['nome_usuario']
+      'nome_usuario': userName
     };
   } catch (e) {
     debugPrint('Erro no login: $e');
@@ -230,6 +245,7 @@ class _LoginPageState extends State<LoginPage> {
                         Map<String, dynamic> data = await login(
                           context.read<LoginData>().email,
                           context.read<LoginData>().password,
+                          context
                         );
 
                         final status = (data['status'] ?? '').toString().toLowerCase();
