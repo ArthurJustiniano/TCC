@@ -5,8 +5,11 @@ import 'package:app_flutter/carteirinha.dart' as carteirinha;
 import 'package:app_flutter/chatpage.dart' as chatpage;
 import 'package:app_flutter/mural.dart' as mural;
 import 'package:app_flutter/usuariopage.dart' as usuariopage;
+import 'package:app_flutter/crud/login.dart';
 import 'package:app_flutter/visualizar_pagamento_page.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_page.dart'; // Importe a página de login
 
 String websocket = 'wss://seu-endereco-websocket';
 
@@ -119,6 +122,21 @@ class _MainDrawerState extends State<MainDrawer> {
                   );
                 },
               ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear(); // Limpa as credenciais salvas
+
+                // Redireciona para a tela de login
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Login()),
+                  (route) => false,
+                );
+              },
+            ),
           ],
         ),
       ),
