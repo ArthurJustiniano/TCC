@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_flutter/PaginaPrincipal.dart';
 import 'package:app_flutter/crud/login.dart';
@@ -24,11 +22,6 @@ Future<void> main() async {
     anonKey: supabaseKey,
   );
   
-  // Garante que os widgets do Flutter estão prontos
-  WidgetsFlutterBinding.ensureInitialized();
-  // Inicializa o Firebase 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   // Verifica se há credenciais salvas
   final prefs = await SharedPreferences.getInstance();
   final savedEmail = prefs.getString('email');
