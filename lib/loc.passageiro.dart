@@ -57,6 +57,16 @@ class _MapScreenForPassengerState extends State<MapScreenForPassenger> {
       body: StreamBuilder<Map<String, dynamic>>(
         stream: _locationStream,
         builder: (context, snapshot) {
+          // 1. Lidando com o estado de carregamento
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // 2. Lidando com erros no stream
+          if (snapshot.hasError) {
+            return Center(child: Text('Erro ao carregar a localização: ${snapshot.error}'));
+          }
+
           Set<Marker> markers = {};
 
           if (snapshot.hasData && snapshot.data!.isNotEmpty) {

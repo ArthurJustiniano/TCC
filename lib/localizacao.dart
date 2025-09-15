@@ -1,5 +1,5 @@
-import 'package:app_flutter/map.page.dart';
 import 'package:flutter/material.dart';
+import 'package:app_flutter/loc.passageiro.dart';
 
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
@@ -173,10 +173,12 @@ class RouteExamplesPage extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    // Passando o ID do motorista para o mapa
-                                    builder: (context) => const MapPage(
-                                      trackedUserId: 'James',
-                                      isDriver: false, // Modo Passageiro
+                                    // IMPORTANTE: O 'driverId' deve ser o UUID real do motorista
+                                    // que está na sua tabela de usuários do Supabase.
+                                    // O valor 'uuid-do-james-aqui' é um exemplo e precisa ser substituído.
+                                    builder: (context) => const MapScreenForPassenger(
+                                      driverId:
+                                          'uuid-do-james-aqui', // <-- SUBSTITUA PELO UUID REAL
                                     ),
                                   ),
                                 );
@@ -232,10 +234,12 @@ class RouteExamplesPage extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    // Passando o ID do motorista para o mapa
-                                    builder: (context) => const MapPage(
-                                      trackedUserId: 'Leandro',
-                                      isDriver: false, // Modo Passageiro
+                                    // IMPORTANTE: O 'driverId' deve ser o UUID real do motorista
+                                    // que está na sua tabela de usuários do Supabase.
+                                    // O valor 'uuid-do-leandro-aqui' é um exemplo e precisa ser substituído.
+                                    builder: (context) => const MapScreenForPassenger(
+                                      driverId:
+                                          'uuid-do-leandro-aqui', // <-- SUBSTITUA PELO UUID REAL
                                     ),
                                   ),
                             
