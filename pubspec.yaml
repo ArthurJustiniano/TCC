@@ -36,9 +36,6 @@ dependencies:
   geolocator: ^10.1.0
   permission_handler: ^11.3.0
   shared_preferences: ^2.5.3
-  # Adicione estes pacotes para o Firebase
-  firebase_core: ^2.32.0
-  cloud_firestore: ^4.17.5
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
