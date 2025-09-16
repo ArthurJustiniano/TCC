@@ -1,6 +1,9 @@
 import 'package:app_flutter/map.page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:app_flutter/user_profile_data.dart';
+import 'package:app_flutter/user_data.dart';
 
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
@@ -160,6 +163,40 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
             child: Column(
               children: [
                 const OrangeBanner(),
+                // Adiciona o botão de "Modo Motorista" se o usuário for um motorista
+                Consumer<UserProfileData>(
+                  builder: (context, userProfile, child) {
+                    // Pega o ID do usuário logado pelo Provider
+                    final loggedInUserId = Provider.of<UserData>(context, listen: false).userId;
+
+                    if (userProfile.userType == 2 && loggedInUserId != null && loggedInUserId.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.drive_eta, color: Colors.white),
+                          label: const Text('ATIVAR MODO MOTORISTA', style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MapPage(
+                                  // O motorista usa o seu próprio ID para enviar a localização
+                                  trackedUserId: loggedInUserId,
+                                  isDriver: true, // Ativa o modo motorista
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink(); // Não mostra nada se não for motorista
+                  },
+                ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ListView.separated(

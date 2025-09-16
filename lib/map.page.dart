@@ -47,8 +47,6 @@ class _MapPageState extends State<MapPage> {
       } else {
         _initializePassengerMode();
       }
-      // 3. Centraliza o mapa na localização do usuário (motorista ou passageiro)
-      _centerOnUserLocation();
     } else {
       // Lida com a permissão negada
       if (mounted) {
@@ -112,6 +110,8 @@ class _MapPageState extends State<MapPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
+    // Centraliza o mapa na localização do usuário APÓS o mapa ser criado.
+    _centerOnUserLocation();
   }
 
   /// Centraliza o mapa na localização atual do usuário.
