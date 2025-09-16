@@ -60,7 +60,28 @@ class _MapPageState extends State<MapPage> {
   }
 
   /// Configura o modo MOTORISTA: envia a localização para o Supabase.
-  void _initializeDriverMode() {
+  void _initializeDriverMode() async {
+    // Pega a localização inicial para centralizar o mapa rapidamente
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final driverLocation = LatLng(position.latitude, position.longitude);
+      _updateMarker(
+        Marker(
+          markerId: const MarkerId(_driverMarkerId),
+          position: driverLocation,
+          infoWindow: const InfoWindow(title: 'Sua Posição'),
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        ),
+      );
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(driverLocation, 16.0));
+    } catch (e) {
+      debugPrint("Erro ao obter localização inicial do motorista: $e");
+    }
+
+    // Inicia o stream para atualizações contínuas
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
@@ -87,8 +108,7 @@ class _MapPageState extends State<MapPage> {
           'longitude': position.longitude,
           'updated_at': DateTime.now().toIso8601String(),
         });
-        debugPrint(
-            'Localização enviada: ${position.latitude}, ${position.longitude}');
+        // Opcional: não precisa de print a cada envio para não poluir o console
       } catch (error) {
         debugPrint('Erro ao enviar localização: $error');
       }
@@ -111,8 +131,11 @@ class _MapPageState extends State<MapPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
-    // Centraliza o mapa na localização do usuário APÓS o mapa ser criado.
-    _centerOnUserLocation();
+    // Para o passageiro, centraliza na sua própria localização.
+    // O motorista já é centralizado em _initializeDriverMode.
+    if (!widget.isDriver) {
+      _centerOnUserLocation();
+    }
   }
 
   /// Centraliza o mapa na localização atual do usuário.
@@ -170,15 +193,19 @@ class _MapPageState extends State<MapPage> {
     return StreamBuilder<Map<String, dynamic>>(
       stream: _locationStream,
       builder: (context, snapshot) {
+        debugPrint('PASSAGEIRO - Snapshot: connectionState=${snapshot.connectionState}, hasData=${snapshot.hasData}, hasError=${snapshot.hasError}, data=${snapshot.data}');
+
         // Começa com os marcadores atuais (ex: a própria posição do passageiro)
         final Set<Marker> currentMarkers = Set<Marker>.from(_markers);
 
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           final data = snapshot.data!;
-          final lat = data['latitude'];
-          final lng = data['longitude'];
+          // Conversão robusta para double, aceitando int ou double do Supabase.
+          final lat = (data['latitude'] as num?)?.toDouble();
+          final lng = (data['longitude'] as num?)?.toDouble();
 
-          if (lat is double && lng is double) {
+          // Verifica se a localização é válida (não é 0,0, que geralmente é um erro)
+          if (lat != null && lng != null && (lat != 0.0 || lng != 0.0)) {
             final driverPosition = LatLng(lat, lng);
 
             // Remove o marcador antigo do motorista e adiciona o novo

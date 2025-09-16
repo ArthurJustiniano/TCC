@@ -211,7 +211,7 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                     itemBuilder: (context, index) {
                       final driver = drivers[index];
                       final driverName = driver['nome_usuario'] as String;
-                      final driverId = driver['id_usuario'].toString();
+                      final driverId = driver['id_usuario'] as String;
 
                       return Card(
                         child: Padding(
