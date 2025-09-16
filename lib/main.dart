@@ -7,6 +7,7 @@ import 'package:app_flutter/mural.dart';
 import 'package:app_flutter/user_profile_data.dart';
 import 'package:app_flutter/visualizar_pagamento_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_flutter/user_data.dart';
 
 const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
@@ -36,6 +37,7 @@ Future<void> main() async {
           ..updateName(savedName ?? '')
           ..userType = savedUserType ?? 1),
         ChangeNotifierProvider(create: (context) => PaymentData()),
+        ChangeNotifierProvider(create: (context) => UserData()),
       ],
       child: MaterialApp(
         home: savedEmail != null && savedName != null && savedUserType != null

@@ -101,6 +101,7 @@ class _MapPageState extends State<MapPage> {
         .from('locations')
         .stream(primaryKey: ['user_id']).eq('user_id', widget.trackedUserId)
         .map((listOfMaps) {
+      debugPrint('Dados recebidos do Supabase: $listOfMaps');
       if (listOfMaps.isNotEmpty) {
         return listOfMaps.first;
       }
