@@ -1,5 +1,5 @@
+import 'package:app_flutter/map.page.dart';
 import 'package:flutter/material.dart';
-import 'package:app_flutter/loc.passageiro.dart';
 
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
@@ -175,10 +175,11 @@ class RouteExamplesPage extends StatelessWidget {
                                   MaterialPageRoute(
                                     // IMPORTANTE: O 'driverId' deve ser o UUID real do motorista
                                     // que está na sua tabela de usuários do Supabase.
-                                    // O valor 'uuid-do-james-aqui' é um exemplo e precisa ser substituído.
-                                    builder: (context) => const MapScreenForPassenger(
-                                      driverId:
+                                    // O valor 'uuid-do-james-aqui' é um exemplo e precisa ser substituído pelo UUID correto.
+                                    builder: (context) => const MapPage(
+                                      trackedUserId:
                                           'uuid-do-james-aqui', // <-- SUBSTITUA PELO UUID REAL
+                                      isDriver: false, // Modo Passageiro
                                     ),
                                   ),
                                 );
@@ -236,10 +237,11 @@ class RouteExamplesPage extends StatelessWidget {
                                   MaterialPageRoute(
                                     // IMPORTANTE: O 'driverId' deve ser o UUID real do motorista
                                     // que está na sua tabela de usuários do Supabase.
-                                    // O valor 'uuid-do-leandro-aqui' é um exemplo e precisa ser substituído.
-                                    builder: (context) => const MapScreenForPassenger(
-                                      driverId:
+                                    // O valor 'uuid-do-leandro-aqui' é um exemplo e precisa ser substituído pelo UUID correto.
+                                    builder: (context) => const MapPage(
+                                      trackedUserId:
                                           'uuid-do-leandro-aqui', // <-- SUBSTITUA PELO UUID REAL
+                                      isDriver: false, // Modo Passageiro
                                     ),
                                   ),
                             
