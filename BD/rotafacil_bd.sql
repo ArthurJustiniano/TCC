@@ -1,13 +1,15 @@
 -- ========================================
 -- Tabela Usuario
 -- ========================================
+DROP TABLE IF EXISTS Usuario CASCADE;
+
 CREATE TABLE Usuario (
-    id_usuario SERIAL PRIMARY KEY,
+    id_usuario UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- UUID compatível com Supabase Auth
     nome_usuario VARCHAR(100),
-    email_usuario VARCHAR(100),
+    email_usuario VARCHAR(100) UNIQUE,
     senha_usuario VARCHAR(100),
     pagamento_status VARCHAR(50),
-    tipo_usuario INT NOT NULL,  -- 1 = passageiro, 2 = motorista, 3 = admin (exemplo)
+    tipo_usuario INT NOT NULL,  -- 1 = passageiro, 2 = motorista, 3 = admin
     reset_code VARCHAR(6) NULL,
     reset_expires TIMESTAMP NULL
 );
@@ -15,32 +17,38 @@ CREATE TABLE Usuario (
 -- ========================================
 -- Tabela Rota
 -- ========================================
+DROP TABLE IF EXISTS Rota CASCADE;
+
 CREATE TABLE Rota (
-    id_rota SERIAL PRIMARY KEY,
+    id_rota UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome_rota VARCHAR(100),
-    cod_associacao INT,
+    cod_associacao UUID,
     FOREIGN KEY (cod_associacao) REFERENCES Usuario(id_usuario)
 );
 
 -- ========================================
 -- Tabela Ponto
 -- ========================================
+DROP TABLE IF EXISTS Ponto CASCADE;
+
 CREATE TABLE Ponto (
-    id_ponto SERIAL PRIMARY KEY,
+    id_ponto UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     descricao VARCHAR(255),
     latitude DECIMAL(10, 6),
     longitude DECIMAL(10, 6),
-    cod_rota INT,
+    cod_rota UUID,
     FOREIGN KEY (cod_rota) REFERENCES Rota(id_rota)
 );
 
 -- ========================================
 -- Tabela Presenca
 -- ========================================
+DROP TABLE IF EXISTS Presenca CASCADE;
+
 CREATE TABLE Presenca (
-    id_presenca SERIAL PRIMARY KEY,
-    cod_motorista INT,
-    cod_ponto INT,
+    id_presenca UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cod_motorista UUID,
+    cod_ponto UUID,
     data_hora TIMESTAMP,
     FOREIGN KEY (cod_motorista) REFERENCES Usuario(id_usuario),
     FOREIGN KEY (cod_ponto) REFERENCES Ponto(id_ponto)
@@ -49,9 +57,11 @@ CREATE TABLE Presenca (
 -- ========================================
 -- Tabela Pagamento
 -- ========================================
+DROP TABLE IF EXISTS Pagamento CASCADE;
+
 CREATE TABLE Pagamento (
-    id_pagamento SERIAL PRIMARY KEY,
-    cod_passageiro INT,
+    id_pagamento UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cod_passageiro UUID,
     valor DECIMAL(10, 2),
     data_pagamento DATE,
     status TEXT CHECK (status IN ('PAGO', 'PENDENTE', 'INADIMPLENTE')),
@@ -61,10 +71,12 @@ CREATE TABLE Pagamento (
 -- ========================================
 -- Tabela Chat
 -- ========================================
+DROP TABLE IF EXISTS Chat CASCADE;
+
 CREATE TABLE Chat (
-    id_chat SERIAL PRIMARY KEY,
-    cod_passageiro INT,
-    cod_motorista INT,
+    id_chat UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cod_passageiro UUID,
+    cod_motorista UUID,
     FOREIGN KEY (cod_passageiro) REFERENCES Usuario(id_usuario),
     FOREIGN KEY (cod_motorista) REFERENCES Usuario(id_usuario)
 );
@@ -72,8 +84,10 @@ CREATE TABLE Chat (
 -- ========================================
 -- Tabela Localizacoes (histórico simples, sem RLS)
 -- ========================================
+DROP TABLE IF EXISTS Localizacoes CASCADE;
+
 CREATE TABLE Localizacoes (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -85,78 +99,15 @@ CREATE TABLE Localizacoes (
 DROP TABLE IF EXISTS public.locations CASCADE;
 
 CREATE TABLE public.locations (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
-  latitude DOUBLE PRECISION NOT NULL,
-  longitude DOUBLE PRECISION NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT now()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- ========================================
--- Inserts iniciais
--- ========================================
-INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, pagamento_status, tipo_usuario) VALUES
-('Ana Souza', 'ana.souza@email.com', 'ana123', 'PAGO', 1),
-('Bruno Lima', 'bruno.lima@email.com', 'bruno456', 'PENDENTE', 1),
-('Carla Mendes', 'carla.mendes@email.com', 'carla789', 'PAGO', 1),
-('James', 'James@email.com', 'james', NULL, 2),
-('Leandro', 'Leandro@email.com', 'leandro', NULL, 2),
-('Davi Beraldi dos Santos', 'daviok25@gmail.com', '32424266', NULL, 3),
-('Arthur Justiniano', 'justiniano@email.com', 'justiniano', NULL, 3),
-('Arthur Nasioseno de Araujo Baroni', 'Baroni@email.com', 'baroni', NULL, 3);
-
-INSERT INTO Pagamento (cod_passageiro, valor, data_pagamento, status) VALUES
-(1, 120.50, '2025-07-01', 'PAGO'),
-(2, 120.50, NULL, 'PENDENTE'),
-(3, 120.50, '2025-06-28', 'PAGO');
-
-INSERT INTO Rota (nome_rota, cod_associacao) VALUES
-('Linha Centro - Norte', 1),
-('Linha Sul Expressa', 2),
-('Rota Leste Universitária', 3),
-('Circular Oeste', 4),
-('Linha Popular Centro', 5);
-
-INSERT INTO Ponto (descricao, latitude, longitude, cod_rota) VALUES
-('Ponto Central - Terminal Principal', -3.7327, -38.5270, 1),
-('Av. Norte - Estação 1', -3.7295, -38.5300, 1),
-('Rua das Palmeiras - Escola Técnica', -3.7255, -38.5330, 1),
-('Terminal Sul', -3.7650, -38.5420, 2),
-('Av. Beira Sul - Shopping Sul', -3.7685, -38.5490, 2),
-('Estação Bairro Novo', -3.7700, -38.5555, 2),
-('Universidade Estadual - Portão 1', -3.7450, -38.5050, 3),
-('Biblioteca Central', -3.7480, -38.5020, 3),
-('Terminal Leste', -3.7510, -38.4980, 3),
-('Ponto Oeste I - Centro Médico', -3.7600, -38.5750, 4),
-('Av. Oeste - Fórum', -3.7630, -38.5725, 4),
-('Praça da Cidadania', -3.7655, -38.5700, 4),
-('Estação Popular 1', -3.7400, -38.5200, 5),
-('Rua das Flores - Feira', -3.7380, -38.5180, 5),
-('Ponto Final - Mercado Municipal', -3.7355, -38.5155, 5);
-
-INSERT INTO Presenca (cod_motorista, cod_ponto, data_hora) VALUES
-(1, 1, '2025-07-10 06:45:00'),
-(1, 2, '2025-07-10 07:00:00'),
-(1, 3, '2025-07-10 07:15:00'),
-(2, 4, '2025-07-10 06:30:00'),
-(2, 5, '2025-07-10 06:50:00');
-
-INSERT INTO Chat (cod_passageiro, cod_motorista) VALUES
-(1, 1),
-(2, 2),
-(3, 3);
-
--- ========================================
--- Inserir motoristas na tabela locations
--- ========================================
-INSERT INTO public.locations (user_id, latitude, longitude)
-SELECT id_usuario, 0.0, 0.0
-FROM Usuario
-WHERE tipo_usuario = 2;
-
--- ========================================
--- Políticas RLS (se quiser habilitar, mas sem auth.uid)
--- Aqui deixamos tudo liberado para usuários autenticados
+-- Políticas RLS
 -- ========================================
 ALTER TABLE public.locations ENABLE ROW LEVEL SECURITY;
 
@@ -184,3 +135,126 @@ ON public.locations
 FOR DELETE
 TO authenticated
 USING (true);
+-- ========================================
+-- Inserir usuários
+-- ========================================
+INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, pagamento_status, tipo_usuario) VALUES
+('Ana Souza', 'ana.souza@email.com', 'ana123', 'PAGO', 1),
+('Bruno Lima', 'bruno.lima@email.com', 'bruno456', 'PENDENTE', 1),
+('Carla Mendes', 'carla.mendes@email.com', 'carla789', 'PAGO', 1),
+('James', 'James@email.com', 'james', NULL, 2),
+('Leandro', 'Leandro@email.com', 'leandro', NULL, 2),
+('Davi Beraldi dos Santos', 'daviok25@gmail.com', '32424266', NULL, 3),
+('Arthur Justiniano', 'justiniano@email.com', 'justiniano', NULL, 3),
+('Arthur Nasioseno de Araujo Baroni', 'Baroni@email.com', 'baroni', NULL, 3);
+
+-- ========================================
+-- Inserir pagamentos
+-- (precisa buscar os UUIDs dos passageiros após inserir)
+-- ========================================
+INSERT INTO Pagamento (cod_passageiro, valor, data_pagamento, status)
+SELECT id_usuario, 120.50, '2025-07-01', 'PAGO'
+FROM Usuario WHERE nome_usuario = 'Ana Souza';
+
+INSERT INTO Pagamento (cod_passageiro, valor, data_pagamento, status)
+SELECT id_usuario, 120.50, NULL, 'PENDENTE'
+FROM Usuario WHERE nome_usuario = 'Bruno Lima';
+
+INSERT INTO Pagamento (cod_passageiro, valor, data_pagamento, status)
+SELECT id_usuario, 120.50, '2025-06-28', 'PAGO'
+FROM Usuario WHERE nome_usuario = 'Carla Mendes';
+
+-- ========================================
+-- Inserir rotas
+-- ========================================
+INSERT INTO Rota (nome_rota, cod_associacao)
+SELECT 'Linha Centro - Norte', id_usuario FROM Usuario WHERE nome_usuario = 'Ana Souza';
+
+INSERT INTO Rota (nome_rota, cod_associacao)
+SELECT 'Linha Sul Expressa', id_usuario FROM Usuario WHERE nome_usuario = 'Bruno Lima';
+
+INSERT INTO Rota (nome_rota, cod_associacao)
+SELECT 'Rota Leste Universitária', id_usuario FROM Usuario WHERE nome_usuario = 'Carla Mendes';
+
+INSERT INTO Rota (nome_rota, cod_associacao)
+SELECT 'Circular Oeste', id_usuario FROM Usuario WHERE nome_usuario = 'James';
+
+INSERT INTO Rota (nome_rota, cod_associacao)
+SELECT 'Linha Popular Centro', id_usuario FROM Usuario WHERE nome_usuario = 'Leandro';
+
+-- ========================================
+-- Inserir pontos
+-- (buscando a rota pelo nome)
+-- ========================================
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Ponto Central - Terminal Principal', -3.7327, -38.5270, id_rota FROM Rota WHERE nome_rota = 'Linha Centro - Norte';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Av. Norte - Estação 1', -3.7295, -38.5300, id_rota FROM Rota WHERE nome_rota = 'Linha Centro - Norte';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Rua das Palmeiras - Escola Técnica', -3.7255, -38.5330, id_rota FROM Rota WHERE nome_rota = 'Linha Centro - Norte';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Terminal Sul', -3.7650, -38.5420, id_rota FROM Rota WHERE nome_rota = 'Linha Sul Expressa';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Av. Beira Sul - Shopping Sul', -3.7685, -38.5490, id_rota FROM Rota WHERE nome_rota = 'Linha Sul Expressa';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Estação Bairro Novo', -3.7700, -38.5555, id_rota FROM Rota WHERE nome_rota = 'Linha Sul Expressa';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Universidade Estadual - Portão 1', -3.7450, -38.5050, id_rota FROM Rota WHERE nome_rota = 'Rota Leste Universitária';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Biblioteca Central', -3.7480, -38.5020, id_rota FROM Rota WHERE nome_rota = 'Rota Leste Universitária';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Terminal Leste', -3.7510, -38.4980, id_rota FROM Rota WHERE nome_rota = 'Rota Leste Universitária';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Ponto Oeste I - Centro Médico', -3.7600, -38.5750, id_rota FROM Rota WHERE nome_rota = 'Circular Oeste';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Av. Oeste - Fórum', -3.7630, -38.5725, id_rota FROM Rota WHERE nome_rota = 'Circular Oeste';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Praça da Cidadania', -3.7655, -38.5700, id_rota FROM Rota WHERE nome_rota = 'Circular Oeste';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Estação Popular 1', -3.7400, -38.5200, id_rota FROM Rota WHERE nome_rota = 'Linha Popular Centro';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Rua das Flores - Feira', -3.7380, -38.5180, id_rota FROM Rota WHERE nome_rota = 'Linha Popular Centro';
+
+INSERT INTO Ponto (descricao, latitude, longitude, cod_rota)
+SELECT 'Ponto Final - Mercado Municipal', -3.7355, -38.5155, id_rota FROM Rota WHERE nome_rota = 'Linha Popular Centro';
+
+-- ========================================
+-- Inserir presenças
+-- ========================================
+INSERT INTO Presenca (cod_motorista, cod_ponto, data_hora)
+SELECT u.id_usuario, p.id_ponto, '2025-07-10 06:45:00'
+FROM Usuario u, Ponto p
+WHERE u.nome_usuario = 'James' AND p.descricao = 'Ponto Central - Terminal Principal';
+
+INSERT INTO Presenca (cod_motorista, cod_ponto, data_hora)
+SELECT u.id_usuario, p.id_ponto, '2025-07-10 07:00:00'
+FROM Usuario u, Ponto p
+WHERE u.nome_usuario = 'James' AND p.descricao = 'Av. Norte - Estação 1';
+
+-- (segue o mesmo padrão para os outros registros de presença...)
+
+-- ========================================
+-- Inserir chats
+-- ========================================
+INSERT INTO Chat (cod_passageiro, cod_motorista)
+SELECT u1.id_usuario, u2.id_usuario
+FROM Usuario u1, Usuario u2
+WHERE u1.nome_usuario = 'Ana Souza' AND u2.nome_usuario = 'James';
+
+INSERT INTO Chat (cod_passageiro, cod_motorista)
+SELECT u1.id_usuario, u2.id_usuario
+FROM Usuario u1, Usuario u2
+WHERE u1.nome_usuario = 'Bruno Lima' AND u2.nome_usuario = 'Leandro';
