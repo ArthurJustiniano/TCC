@@ -48,5 +48,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Permissões de Localização -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Este aplicativo precisa de acesso à sua localização para mostrar sua posição e a do motorista no mapa.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Este aplicativo precisa de acesso à sua localização para compartilhar sua posição em tempo real.</string>
 </dict>
 </plist>
