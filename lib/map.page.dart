@@ -29,8 +29,8 @@ class _MapPageState extends State<MapPage> {
 
   // Stream para o modo motorista
   StreamSubscription<Position>? _positionStreamSubscription;
-  // Stream para o modo passageiro
-  Stream<Map<String, dynamic>>? _locationStream;
+  // Assinatura do stream para o modo passageiro
+  StreamSubscription<List<Map<String, dynamic>>>? _passengerLocationSubscription;
 
   @override
   void initState() {
@@ -46,7 +46,8 @@ class _MapPageState extends State<MapPage> {
       if (widget.isDriver) {
         _initializeDriverMode();
       } else {
-        _initializePassengerMode();
+        // Para o passageiro, primeiro centraliza nele e depois começa a ouvir o motorista.
+        _centerOnUserLocation().then((_) => _initializePassengerMode());
       }
     } else {
       // Lida com a permissão negada
@@ -118,15 +119,37 @@ class _MapPageState extends State<MapPage> {
 
   /// Configura o modo PASSAGEIRO: escuta a localização do Supabase.
   void _initializePassengerMode() {
-    _locationStream = Supabase.instance.client
+    final stream = Supabase.instance.client
         .from('locations')
-        .stream(primaryKey: ['id']).eq('user_id', widget.trackedUserId)
-        .map((listOfMaps) {
-      debugPrint('Dados recebidos do Supabase: $listOfMaps');
+        .stream(primaryKey: ['id']).eq('user_id', widget.trackedUserId);
+
+    _passengerLocationSubscription = stream.listen((listOfMaps) {
+      debugPrint('PASSAGEIRO - Dados recebidos do Supabase: $listOfMaps');
       if (listOfMaps.isNotEmpty) {
-        return listOfMaps.first;
+        final data = listOfMaps.first;
+        final lat = (data['latitude'] as num?)?.toDouble();
+        final lng = (data['longitude'] as num?)?.toDouble();
+
+        if (lat != null && lng != null && (lat != 0.0 || lng != 0.0)) {
+          final driverPosition = LatLng(lat, lng);
+          final driverMarker = Marker(
+            markerId: const MarkerId(_driverMarkerId),
+            position: driverPosition,
+            infoWindow: const InfoWindow(title: 'Motorista'),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          );
+          // Atualiza o marcador do motorista na tela
+          _updateMarker(driverMarker);
+          // Anima a câmera para a nova posição do motorista
+          _mapController?.animateCamera(CameraUpdate.newLatLng(driverPosition));
+        }
       }
-      return <String, dynamic>{};
+    }, onError: (error) {
+      debugPrint('PASSAGEIRO - Erro no stream: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao receber localização: $error')),
+      );
     });
   }
 
@@ -139,12 +162,12 @@ class _MapPageState extends State<MapPage> {
       }
     } else {
       // Se for passageiro, centraliza na sua própria localização
-      _centerOnUserLocation();
+      // Isso agora é chamado antes de iniciar o modo passageiro.
     }
   }
 
   /// Centraliza o mapa na localização atual do usuário.
-  void _centerOnUserLocation() async {
+  Future<void> _centerOnUserLocation() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -178,6 +201,7 @@ class _MapPageState extends State<MapPage> {
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
+    _passengerLocationSubscription?.cancel();
     _mapController?.dispose();
     super.dispose();
   }
@@ -189,79 +213,12 @@ class _MapPageState extends State<MapPage> {
         title: Text(
             widget.isDriver ? 'Modo Motorista' : 'Localização do Motorista'),
       ),
-      body: widget.isDriver ? _buildDriverMap() : _buildPassengerMap(),
-    );
-  }
-
-  /// Constrói o mapa para o PASSAGEIRO, usando um StreamBuilder para tempo real.
-  Widget _buildPassengerMap() {
-    return StreamBuilder<Map<String, dynamic>>(
-      stream: _locationStream,
-      builder: (context, snapshot) {
-        debugPrint('PASSAGEIRO - Snapshot: connectionState=${snapshot.connectionState}, hasData=${snapshot.hasData}, hasError=${snapshot.hasError}, data=${snapshot.data}');
-
-        // Começa com os marcadores atuais (ex: a própria posição do passageiro)
-        final Set<Marker> currentMarkers = Set<Marker>.from(_markers);
-
-        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-          final data = snapshot.data!;
-          // Conversão robusta para double, aceitando int ou double do Supabase.
-          final lat = (data['latitude'] as num?)?.toDouble();
-          final lng = (data['longitude'] as num?)?.toDouble();
-
-          // Verifica se a localização é válida (não é 0,0, que geralmente é um erro)
-          if (lat != null && lng != null && (lat != 0.0 || lng != 0.0)) {
-            final driverPosition = LatLng(lat, lng);
-
-            // Remove o marcador antigo do motorista e adiciona o novo
-            currentMarkers
-                .removeWhere((m) => m.markerId.value == _driverMarkerId);
-            currentMarkers.add(
-              Marker(
-                markerId: const MarkerId(_driverMarkerId),
-                position: driverPosition,
-                infoWindow: const InfoWindow(title: 'Motorista'),
-                icon: BitmapDescriptor.defaultMarkerWithHue(
-                    BitmapDescriptor.hueAzure),
-              ),
-            );
-
-            // Anima a câmera para a nova posição do motorista
-            _mapController?.animateCamera(CameraUpdate.newLatLng(driverPosition));
-          }
-        }
-
-        // Mostra um indicador de carregamento no início
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            currentMarkers.length <= 1) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Mostra um erro se o stream falhar
-        if (snapshot.hasError) {
-          return Center(
-              child: Text('Erro ao carregar a localização: ${snapshot.error}'));
-        }
-
-        // Retorna o mapa com o conjunto de marcadores atualizado
-        return GoogleMap(
-          initialCameraPosition: CameraPosition(
-            target: _initialCameraPosition,
-            zoom: 14.0,
-          ),
-          markers: currentMarkers,
-          onMapCreated: _onMapCreated,
-        );
-      },
-    );
-  }
-
-  /// Constrói o mapa para o MOTORISTA, que é atualizado via setState.
-  Widget _buildDriverMap() {
-    return GoogleMap(
-      initialCameraPosition: CameraPosition(target: _initialCameraPosition, zoom: 14.0),
-      markers: _markers,
-      onMapCreated: _onMapCreated,
+      // O mapa agora é o corpo principal, e seus marcadores são atualizados via setState.
+      body: GoogleMap(
+        initialCameraPosition: CameraPosition(target: _initialCameraPosition, zoom: 14.0),
+        markers: _markers,
+        onMapCreated: _onMapCreated,
+      ),
     );
   }
 }
