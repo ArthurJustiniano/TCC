@@ -4,7 +4,7 @@
 DROP TABLE IF EXISTS Usuario CASCADE;
 
 CREATE TABLE Usuario (
-    id_usuario UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- UUID compatível com Supabase Auth
+    id_usuario SERIAL PRIMARY KEY, -- ID numérico incremental
     nome_usuario VARCHAR(100),
     email_usuario VARCHAR(100) UNIQUE,
     senha_usuario VARCHAR(100),
@@ -20,9 +20,9 @@ CREATE TABLE Usuario (
 DROP TABLE IF EXISTS Rota CASCADE;
 
 CREATE TABLE Rota (
-    id_rota UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_rota SERIAL PRIMARY KEY, -- ID numérico incremental
     nome_rota VARCHAR(100),
-    cod_associacao UUID,
+    cod_associacao INT,
     FOREIGN KEY (cod_associacao) REFERENCES Usuario(id_usuario)
 );
 
@@ -32,11 +32,11 @@ CREATE TABLE Rota (
 DROP TABLE IF EXISTS Ponto CASCADE;
 
 CREATE TABLE Ponto (
-    id_ponto UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id_ponto SERIAL PRIMARY KEY, -- ID numérico incremental
     descricao VARCHAR(255),
     latitude DECIMAL(10, 6),
     longitude DECIMAL(10, 6),
-    cod_rota UUID,
+    cod_rota INT,
     FOREIGN KEY (cod_rota) REFERENCES Rota(id_rota)
 );
 
@@ -46,9 +46,9 @@ CREATE TABLE Ponto (
 DROP TABLE IF EXISTS Presenca CASCADE;
 
 CREATE TABLE Presenca (
-    id_presenca UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cod_motorista UUID,
-    cod_ponto UUID,
+    id_presenca SERIAL PRIMARY KEY, -- ID numérico incremental
+    cod_motorista INT,
+    cod_ponto INT,
     data_hora TIMESTAMP,
     FOREIGN KEY (cod_motorista) REFERENCES Usuario(id_usuario),
     FOREIGN KEY (cod_ponto) REFERENCES Ponto(id_ponto)
@@ -60,8 +60,8 @@ CREATE TABLE Presenca (
 DROP TABLE IF EXISTS Pagamento CASCADE;
 
 CREATE TABLE Pagamento (
-    id_pagamento UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cod_passageiro UUID,
+    id_pagamento SERIAL PRIMARY KEY, -- ID numérico incremental
+    cod_passageiro INT,
     valor DECIMAL(10, 2),
     data_pagamento DATE,
     status TEXT CHECK (status IN ('PAGO', 'PENDENTE', 'INADIMPLENTE')),
@@ -74,9 +74,9 @@ CREATE TABLE Pagamento (
 DROP TABLE IF EXISTS Chat CASCADE;
 
 CREATE TABLE Chat (
-    id_chat UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cod_passageiro UUID,
-    cod_motorista UUID,
+    id_chat SERIAL PRIMARY KEY, -- ID numérico incremental
+    cod_passageiro INT,
+    cod_motorista INT,
     FOREIGN KEY (cod_passageiro) REFERENCES Usuario(id_usuario),
     FOREIGN KEY (cod_motorista) REFERENCES Usuario(id_usuario)
 );
@@ -87,7 +87,7 @@ CREATE TABLE Chat (
 DROP TABLE IF EXISTS Localizacoes CASCADE;
 
 CREATE TABLE Localizacoes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY, -- ID numérico incremental
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -99,8 +99,8 @@ CREATE TABLE Localizacoes (
 DROP TABLE IF EXISTS public.locations CASCADE;
 
 CREATE TABLE public.locations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY, -- ID numérico incremental
+    user_id INT REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT now()
@@ -135,6 +135,10 @@ ON public.locations
 FOR DELETE
 TO authenticated
 USING (true);
+
+-- Desabilitar RLS temporariamente para testes na tabela `locations`
+ALTER TABLE public.locations DISABLE ROW LEVEL SECURITY;
+
 -- ========================================
 -- Inserir usuários
 -- ========================================
@@ -150,7 +154,7 @@ INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, pagamento_statu
 
 -- ========================================
 -- Inserir pagamentos
--- (precisa buscar os UUIDs dos passageiros após inserir)
+-- (precisa buscar os IDs dos passageiros após inserir)
 -- ========================================
 INSERT INTO Pagamento (cod_passageiro, valor, data_pagamento, status)
 SELECT id_usuario, 120.50, '2025-07-01', 'PAGO'

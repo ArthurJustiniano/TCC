@@ -5,8 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:app_flutter/user_profile_data.dart';
 import 'package:app_flutter/user_data.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
@@ -169,10 +167,10 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                 // Adiciona o botão de "Modo Motorista" se o usuário for um motorista
                 Consumer<UserProfileData>(
                   builder: (context, userProfile, child) {
-                    // Pega o ID do usuário logado pelo Provider
-                    final loggedInUserId = Provider.of<UserData>(context, listen: false).userId;
+                    // Corrigir o tipo de loggedInUserId para int
+                    final loggedInUserId = int.tryParse(Provider.of<UserData>(context, listen: false).userId ?? '');
 
-                    if (userProfile.userType == 2 && loggedInUserId != null && loggedInUserId.isNotEmpty) {
+                    if (userProfile.userType == 2 && loggedInUserId != null) {
                       return Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                         child: ElevatedButton.icon(
@@ -187,7 +185,6 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => MapPage(
-                                  // O motorista usa o seu próprio ID para enviar a localização
                                   trackedUserId: loggedInUserId,
                                   isDriver: true, // Ativa o modo motorista
                                 ),
@@ -212,46 +209,49 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                       final driver = drivers[index];
                       final driverName = driver['nome_usuario'] as String;
                       // Converte o ID numérico para String para passar para o MapPage
-                      final driverId = driver['id_usuario'].toString();
+                      final driverId = int.tryParse(driver['id_usuario'].toString());
 
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Motorista: $driverName',
-                                style: const TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                      if (driverId != null) {
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Motorista: $driverName',
+                                  style: const TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.bold),
                                 ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => MapPage(
-                                        trackedUserId: driverId, // <- USA O UUID REAL
-                                        isDriver: false,
+                                const SizedBox(height: 20),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MapPage(
+                                          trackedUserId: driverId,
+                                          isDriver: false,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Ver Localização',
-                                  style: TextStyle(
-                                      color:
-                                          Color.fromARGB(255, 250, 250, 250)),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Ver Localização',
+                                    style: TextStyle(
+                                        color:
+                                            Color.fromARGB(255, 250, 250, 250)),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
+                      return const SizedBox.shrink(); // Não mostra nada se driverId for nulo
                     },
                   ),
                 ),

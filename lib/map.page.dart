@@ -11,7 +11,7 @@ const String _driverMarkerId = 'driver_location';
 
 class MapPage extends StatefulWidget {
   // O ID do motorista (seja para rastrear ou para o próprio motorista enviar sua localização)
-  final String trackedUserId;
+  final int trackedUserId; // Alterado para int para refletir IDs numéricos
   final bool isDriver;
 
   const MapPage({super.key, required this.trackedUserId, this.isDriver = false});
@@ -114,7 +114,7 @@ class _MapPageState extends State<MapPage> {
           'latitude': position.latitude,
           'longitude': position.longitude,
           'updated_at': DateTime.now().toIso8601String(),
-        });
+        }, onConflict: 'user_id');
       } catch (error) {
         debugPrint('Erro ao enviar localização: $error');
       }
