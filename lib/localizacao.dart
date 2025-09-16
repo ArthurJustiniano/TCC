@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:app_flutter/map.page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:app_flutter/user_profile_data.dart';
 import 'package:app_flutter/user_data.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
@@ -208,7 +211,7 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                     itemBuilder: (context, index) {
                       final driver = drivers[index];
                       final driverName = driver['nome_usuario'] as String;
-                      final driverId = driver['id_usuario'] as String;
+                      final driverId = driver['id_usuario'].toString();
 
                       return Card(
                         child: Padding(
@@ -256,6 +259,96 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
           );
         },
       ),
+    );
+  }
+}
+
+class MapPage extends StatefulWidget {
+  final String trackedUserId;
+  final bool isDriver;
+
+  const MapPage({
+    required this.trackedUserId,
+    required this.isDriver,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends State<MapPage> {
+  StreamSubscription<Position>? _positionStream;
+  late GoogleMapController _mapController;
+  final Map<String, Marker> _markers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isDriver) {
+      _startLocationUpdates();
+    } else {
+      _startListeningToDriverLocations();
+    }
+  }
+
+  void _startLocationUpdates() {
+    _positionStream = Geolocator.getPositionStream().listen((Position position) async {
+      try {
+        await Supabase.instance.client.from('locations').upsert({
+          'user_id': widget.trackedUserId,
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      } catch (e) {
+        debugPrint('Erro ao atualizar localização: $e');
+      }
+    });
+  }
+
+  void _startListeningToDriverLocations() {
+    Supabase.instance.client
+        .from('locations')
+        .stream(primaryKey: ['id'])
+        .execute()
+        .listen((data) {
+      setState(() {
+        _markers.clear();
+        for (var location in data) {
+          final marker = Marker(
+            markerId: MarkerId(location['user_id'].toString()),
+            position: LatLng(location['latitude'], location['longitude']),
+            infoWindow: InfoWindow(title: 'Motorista ${location['user_id']}'),
+          );
+          _markers[location['user_id'].toString()] = marker;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Mapa')),
+      body: widget.isDriver
+          ? Center(
+              child: Text('Atualizando localização...'),
+            )
+          : GoogleMap(
+              onMapCreated: (controller) => _mapController = controller,
+              markers: _markers.values.toSet(),
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(-3.7327, -38.5270), // Posição inicial (exemplo)
+                zoom: 14,
+              ),
+            ),
     );
   }
 }
