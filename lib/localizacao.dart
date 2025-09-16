@@ -136,8 +136,7 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
       // Assumindo que o tipo de usuário '2' é para motoristas. Ajuste se necessário.
       final response = await Supabase.instance.client
           .from('usuario')
-          // IMPORTANTE: Buscando o ID numérico (chave primária) e não o UUID.
-          .select('id, nome_usuario')
+          .select('id_usuario, nome_usuario') // Corrigido para buscar o campo correto
           .eq('tipo_usuario', 2);
       return List<Map<String, dynamic>>.from(response as List);
     } catch (e) {
@@ -213,7 +212,7 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                       final driver = drivers[index];
                       final driverName = driver['nome_usuario'] as String;
                       // Converte o ID numérico para String para passar para o MapPage
-                      final driverId = driver['id'].toString();
+                      final driverId = driver['id_usuario'].toString();
 
                       return Card(
                         child: Padding(
