@@ -23,8 +23,6 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
-  // Posição inicial do mapa (ex: centro da cidade)
-  LatLng? _driverInitialPosition;
   final LatLng _initialCameraPosition = const LatLng(-23.550520, -46.633308); // São Paulo
 
   // Stream para o modo motorista
@@ -35,96 +33,102 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
-    _initialize();
+    // Apenas solicita a permissão. A lógica do mapa começará em onMapCreated.
+    _requestLocationPermission();
   }
 
-  Future<void> _initialize() async {
-    // 1. Solicita permissão de localização para ambos os modos
-    var status = await Permission.location.request();
-    if (status.isGranted) {
-      // 2. Inicia o modo correto (motorista ou passageiro)
-      if (widget.isDriver) {
-        _initializeDriverMode();
-      } else {
-        // Para o passageiro, primeiro centraliza nele e depois começa a ouvir o motorista.
-        _centerOnUserLocation().then((_) => _initializePassengerMode());
-      }
-    } else {
-      // Lida com a permissão negada
+  Future<void> _requestLocationPermission() async {
+    await Permission.location.request();
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    _setupMapAndModes(); // Ponto de entrada principal da lógica do mapa
+  }
+
+  /// Configura o mapa e inicia os modos motorista/passageiro.
+  Future<void> _setupMapAndModes() async {
+    var status = await Permission.location.status;
+    if (!status.isGranted) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'A permissão de localização é necessária para usar o mapa.')),
+          const SnackBar(content: Text('A permissão de localização é necessária para usar o mapa.')),
         );
       }
+      return;
+    }
+
+    // Obtém a posição inicial do usuário para configurar o mapa
+    try {
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final initialLatLng = LatLng(position.latitude, position.longitude);
+
+      // Anima a câmera para a posição inicial para ambos os tipos de usuário
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(initialLatLng, 16.0));
+
+      if (widget.isDriver) {
+        // Adiciona o marcador do próprio motorista e começa a enviar atualizações
+        _updateMarker(Marker(
+          markerId: const MarkerId(_driverMarkerId),
+          position: initialLatLng,
+          infoWindow: const InfoWindow(title: 'Sua Posição'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        ));
+        _startSendingDriverLocation();
+      } else {
+        // Adiciona o marcador do próprio passageiro e começa a ouvir o motorista
+        _updateMarker(Marker(
+          markerId: const MarkerId(_userMarkerId),
+          position: initialLatLng,
+          infoWindow: const InfoWindow(title: 'Sua Posição'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ));
+        _startListeningToDriverLocation();
+      }
+    } catch (e) {
+      debugPrint("Erro ao obter localização inicial: $e");
     }
   }
 
-  /// Configura o modo MOTORISTA: envia a localização para o Supabase.
-  void _initializeDriverMode() async {
-    // Pega a localização inicial para usar depois que o mapa for criado
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      _driverInitialPosition = LatLng(position.latitude, position.longitude);
-      // Atualiza o marcador imediatamente
-      _updateMarker(
-        Marker(
-          markerId: const MarkerId(_driverMarkerId),
-          position: _driverInitialPosition!,
-          infoWindow: const InfoWindow(title: 'Sua Posição'),
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        ),
-      );
-    } catch (e) {
-      debugPrint("Erro ao obter localização inicial do motorista: $e");
-    }
-
-    // Inicia o stream para atualizações contínuas
+  /// MODO MOTORISTA: Inicia o envio contínuo de localização.
+  void _startSendingDriverLocation() {
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 10, // Atualiza a cada 10 metros
       ),
     ).listen((Position position) async {
-      // Atualiza o marcador no próprio mapa do motorista
       final driverLocation = LatLng(position.latitude, position.longitude);
       _updateMarker(
         Marker(
           markerId: const MarkerId(_driverMarkerId),
           position: driverLocation,
           infoWindow: const InfoWindow(title: 'Sua Posição'),
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         ),
       );
 
-      // Envia a localização para o Supabase
       try {
         await Supabase.instance.client.from('locations').upsert({
-          'user_id': widget.trackedUserId, // O ID do próprio motorista
+          'user_id': widget.trackedUserId,
           'latitude': position.latitude,
           'longitude': position.longitude,
           'updated_at': DateTime.now().toIso8601String(),
         });
-        // Opcional: não precisa de print a cada envio para não poluir o console
       } catch (error) {
         debugPrint('Erro ao enviar localização: $error');
       }
     });
   }
 
-  /// Configura o modo PASSAGEIRO: escuta a localização do Supabase.
-  void _initializePassengerMode() {
+  /// MODO PASSAGEIRO: Começa a ouvir a localização do motorista via Supabase.
+  void _startListeningToDriverLocation() {
     final stream = Supabase.instance.client
         .from('locations')
         .stream(primaryKey: ['id']).eq('user_id', widget.trackedUserId);
 
     _passengerLocationSubscription = stream.listen((listOfMaps) {
-      debugPrint('PASSAGEIRO - Dados recebidos do Supabase: $listOfMaps');
+      debugPrint('PASSAGEIRO - Dados recebidos: $listOfMaps');
       if (listOfMaps.isNotEmpty) {
         final data = listOfMaps.first;
         final lat = (data['latitude'] as num?)?.toDouble();
@@ -136,12 +140,9 @@ class _MapPageState extends State<MapPage> {
             markerId: const MarkerId(_driverMarkerId),
             position: driverPosition,
             infoWindow: const InfoWindow(title: 'Motorista'),
-            icon:
-                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
           );
-          // Atualiza o marcador do motorista na tela
           _updateMarker(driverMarker);
-          // Anima a câmera para a nova posição do motorista
           _mapController?.animateCamera(CameraUpdate.newLatLng(driverPosition));
         }
       }
@@ -151,42 +152,6 @@ class _MapPageState extends State<MapPage> {
         SnackBar(content: Text('Erro ao receber localização: $error')),
       );
     });
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    if (widget.isDriver) {
-      // Se for motorista, centraliza na posição inicial obtida
-      if (_driverInitialPosition != null) {
-        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverInitialPosition!, 16.0));
-      }
-    } else {
-      // Se for passageiro, centraliza na sua própria localização
-      // Isso agora é chamado antes de iniciar o modo passageiro.
-    }
-  }
-
-  /// Centraliza o mapa na localização atual do usuário.
-  Future<void> _centerOnUserLocation() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      final userLocation = LatLng(position.latitude, position.longitude);
-      _updateMarker(
-        Marker(
-          markerId: const MarkerId(_userMarkerId),
-          position: userLocation,
-          infoWindow: const InfoWindow(title: 'Sua Posição'),
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-        ),
-      );
-      _mapController
-          ?.animateCamera(CameraUpdate.newLatLngZoom(userLocation, 16.0));
-    } catch (e) {
-      debugPrint("Erro ao obter localização atual: $e");
-    }
   }
 
   /// Atualiza o conjunto de marcadores na tela.
