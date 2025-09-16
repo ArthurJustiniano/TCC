@@ -1,5 +1,6 @@
 import 'package:app_flutter/map.page.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusAppHomePage extends StatefulWidget {
   const BusAppHomePage({super.key});
@@ -115,191 +116,108 @@ class AvailableRoutesCard extends StatelessWidget {
   }
 }
 
-class RouteExamplesPage extends StatelessWidget {
+class RouteExamplesPage extends StatefulWidget {
   const RouteExamplesPage({super.key});
+
+  @override
+  State<RouteExamplesPage> createState() => _RouteExamplesPageState();
+}
+
+class _RouteExamplesPageState extends State<RouteExamplesPage> {
+  // Função para buscar motoristas do Supabase
+  Future<List<Map<String, dynamic>>> _fetchDrivers() async {
+    try {
+      // Assumindo que o tipo de usuário '2' é para motoristas. Ajuste se necessário.
+      final response = await Supabase.instance.client
+          .from('usuario')
+          .select('id_usuario, nome_usuario')
+          .eq('tipo_usuario', 2);
+      return List<Map<String, dynamic>>.from(response as List);
+    } catch (e) {
+      debugPrint('Erro ao buscar motoristas: $e');
+      // Retorna uma lista vazia em caso de erro para não quebrar a UI.
+      return [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Rotas dos motoristas')),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const OrangeBanner(),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Rotas James',
-                              style: TextStyle(
-                                  fontSize: 24, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 20),
-                            RouteExampleCard(
-                              routeName: 'Rota 101 - Centro',
-                              stops: const [
-                                'Ponto Inicial: Terminal Central',
-                                'Ponto 1: Rua XV de Novembro',
-                                'Ponto 2: Praça Tiradentes',
-                                'Ponto 3: Rua das Flores',
-                                'Ponto Final: Shopping Estação',
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            RouteExampleCard(
-                              routeName: 'Rota 202 - Universitária',
-                              stops: const [
-                                'Ponto Inicial: Terminal Capão Raso',
-                                'Ponto 1: UTFPR',
-                                'Ponto 2: PUC',
-                                'Ponto 3: UNICENP',
-                                'Ponto Final: Universidade Positivo',
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                  ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    // IMPORTANTE: O 'driverId' deve ser o UUID real do motorista
-                                    // que está na sua tabela de usuários do Supabase.
-                                    // O valor 'uuid-do-james-aqui' é um exemplo e precisa ser substituído pelo UUID correto.
-                                    builder: (context) => const MapPage(
-                                      trackedUserId:
-                                          'uuid-do-james-aqui', // <-- SUBSTITUA PELO UUID REAL
-                                      isDriver: false, // Modo Passageiro
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Ver Localização',
-                                style: TextStyle(color: Color.fromARGB(255, 250, 250, 250)),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchDrivers(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Nenhum motorista encontrado.'));
+          }
+
+          final drivers = snapshot.data!;
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                const OrangeBanner(),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: drivers.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 20),
+                    itemBuilder: (context, index) {
+                      final driver = drivers[index];
+                      final driverName = driver['nome_usuario'] as String;
+                      final driverId = driver['id_usuario'] as String;
+
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Motorista: $driverName',
+                                style: const TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Rotas Leandro',
-                              style: TextStyle(
-                                  fontSize: 24, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 20),
-                            RouteExampleCard(
-                              routeName: 'Rota manhã',
-                              stops: const [
-                                'Ponto Inicial: ...',
-                                'Ponto 1: Parque Das Flores, Caixa D`água',
-                                'Ponto 2: Posto Chinão',
-                                'Ponto 3: Livraria Balipa',
-                                'Ponto Final: Tufi Madi',
-                                'Ponto Final: Posto Irmãos Coragem',
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            RouteExampleCard(
-                              routeName: 'Rota Tarde',
-                              stops: const [
-                                'Ponto Inicial: Etec Philadelhpho Gouveia Neto',
-                                'Ponto 1: Posto HM',
-                                'Ponto 2: Tufi Madi',
-                                'Ponto 3: Escola Wilson paschoal',
-                                'Ponto 4: Cohab II',
-                                'Ponto Final: Parque das Flores Caixa D`água',
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                  ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    // IMPORTANTE: O 'driverId' deve ser o UUID real do motorista
-                                    // que está na sua tabela de usuários do Supabase.
-                                    // O valor 'uuid-do-leandro-aqui' é um exemplo e precisa ser substituído pelo UUID correto.
-                                    builder: (context) => const MapPage(
-                                      trackedUserId:
-                                          'uuid-do-leandro-aqui', // <-- SUBSTITUA PELO UUID REAL
-                                      isDriver: false, // Modo Passageiro
+                              const SizedBox(height: 20),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MapPage(
+                                        trackedUserId: driverId, // <- USA O UUID REAL
+                                        isDriver: false,
+                                      ),
                                     ),
-                                  ),
-                            
-                                );
-                              },
-                              child: const Text(
-                                'Ver Localização',
-                                style: TextStyle(color: Color.fromARGB(255, 247, 247, 247)),
+                                  );
+                                },
+                                child: const Text(
+                                  'Ver Localização',
+                                  style: TextStyle(
+                                      color:
+                                          Color.fromARGB(255, 250, 250, 250)),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RouteExampleCard extends StatelessWidget {
-  final String routeName;
-  final List<String> stops;
-
-  const RouteExampleCard({
-    super.key,
-    required this.routeName,
-    required this.stops,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              routeName,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Paradas:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: stops.map((stop) => Text('- $stop')).toList(),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
