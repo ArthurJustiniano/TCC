@@ -24,6 +24,7 @@ class _MapPageState extends State<MapPage> {
   GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
   // Posição inicial do mapa (ex: centro da cidade)
+  LatLng? _driverInitialPosition;
   final LatLng _initialCameraPosition = const LatLng(-23.550520, -46.633308); // São Paulo
 
   // Stream para o modo motorista
@@ -61,22 +62,22 @@ class _MapPageState extends State<MapPage> {
 
   /// Configura o modo MOTORISTA: envia a localização para o Supabase.
   void _initializeDriverMode() async {
-    // Pega a localização inicial para centralizar o mapa rapidamente
+    // Pega a localização inicial para usar depois que o mapa for criado
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      final driverLocation = LatLng(position.latitude, position.longitude);
+      _driverInitialPosition = LatLng(position.latitude, position.longitude);
+      // Atualiza o marcador imediatamente
       _updateMarker(
         Marker(
           markerId: const MarkerId(_driverMarkerId),
-          position: driverLocation,
+          position: _driverInitialPosition!,
           infoWindow: const InfoWindow(title: 'Sua Posição'),
           icon:
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         ),
       );
-      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(driverLocation, 16.0));
     } catch (e) {
       debugPrint("Erro ao obter localização inicial do motorista: $e");
     }
@@ -119,7 +120,7 @@ class _MapPageState extends State<MapPage> {
   void _initializePassengerMode() {
     _locationStream = Supabase.instance.client
         .from('locations')
-        .stream(primaryKey: ['user_id']).eq('user_id', widget.trackedUserId)
+        .stream(primaryKey: ['id']).eq('user_id', widget.trackedUserId)
         .map((listOfMaps) {
       debugPrint('Dados recebidos do Supabase: $listOfMaps');
       if (listOfMaps.isNotEmpty) {
@@ -131,9 +132,13 @@ class _MapPageState extends State<MapPage> {
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
-    // Para o passageiro, centraliza na sua própria localização.
-    // O motorista já é centralizado em _initializeDriverMode.
-    if (!widget.isDriver) {
+    if (widget.isDriver) {
+      // Se for motorista, centraliza na posição inicial obtida
+      if (_driverInitialPosition != null) {
+        _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_driverInitialPosition!, 16.0));
+      }
+    } else {
+      // Se for passageiro, centraliza na sua própria localização
       _centerOnUserLocation();
     }
   }
