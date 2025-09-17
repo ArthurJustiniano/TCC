@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   runApp(
@@ -11,20 +12,71 @@ void main() {
 }
 
 class PaymentData extends ChangeNotifier {
-  final List<User> _users = [
-    User(name: 'Alice', id: '1', paymentStatus: PaymentStatus.pending),
-    User(name: 'Bob', id: '2', paymentStatus: PaymentStatus.paid),
-    User(name: 'Charlie', id: '3', paymentStatus: PaymentStatus.pending),
-    User(name: 'David', id: '4', paymentStatus: PaymentStatus.paid),
-  ];
+  final List<AppUser> _users = [];
+  bool _isLoading = false;
+  String? _error;
 
-  List<User> get users => _users;
+  List<AppUser> get users => _users;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  void updatePaymentStatus(String userId, PaymentStatus status) {
-    final userIndex = _users.indexWhere((user) => user.id == userId);
-    if (userIndex != -1) {
-      _users[userIndex] = _users[userIndex].copyWith(paymentStatus: status);
+  Future<void> fetchUsersFromDatabase() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      debugPrint('Iniciando busca de usuários...');
+      
+      final response = await Supabase.instance.client
+          .from('usuario')
+          .select('id_usuario, nome_usuario, pagamento_status, tipo_usuario')
+          .eq('tipo_usuario', 1)  // Filtrar apenas passageiros (tipo 1)
+          .order('id_usuario');  // Ordenar por ID para ter uma ordem consistente
+          
+      debugPrint('Query executada com sucesso');
+
+      debugPrint('Resposta do Supabase: $response');
+      debugPrint('Tipo da resposta: ${response.runtimeType}');
+
+      _users.clear();
+      for (var user in response) {
+        _users.add(
+          AppUser(
+            name: user['nome_usuario'] ?? 'Desconhecido',
+            id: user['id_usuario']?.toString() ?? '',
+            paymentStatus: _mapPaymentStatus(user['pagamento_status'] ?? 'unknown'),
+            tipoUsuario: (user['tipo_usuario'] as int?) ?? 0,
+            appMetadata: user.containsKey('app_metadata') ? user['app_metadata'] : {},
+            userMetadata: user.containsKey('user_metadata') ? user['user_metadata'] : {},
+            aud: user['aud'] ?? '',
+            createdAt: user['created_at'] != null ? DateTime.tryParse(user['created_at']) : null,
+          ),
+        );
+      }
       notifyListeners();
+    } catch (e, stackTrace) {
+      debugPrint('Erro ao buscar usuários: $e');
+      debugPrint('Stack trace: $stackTrace');
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  PaymentStatus _mapPaymentStatus(String? status) {
+    if (status == null) return PaymentStatus.pending;
+    
+    switch (status.toUpperCase()) {
+      case 'PAGO':
+        return PaymentStatus.paid;
+      case 'PENDENTE':
+        return PaymentStatus.pending;
+      case 'INADIMPLENTE':
+        return PaymentStatus.failed;
+      default:
+        return PaymentStatus.pending;
     }
   }
 }
@@ -48,26 +100,46 @@ extension PaymentStatusExtension on PaymentStatus {
   }
 }
 
-class User {
+class AppUser {
   final String name;
   final String id;
   final PaymentStatus paymentStatus;
+  final int tipoUsuario;
+  final Map<String, dynamic>? appMetadata;
+  final Map<String, dynamic>? userMetadata;
+  final String? aud;
+  final DateTime? createdAt;
 
-  User({
+  AppUser({
     required this.name,
     required this.id,
     required this.paymentStatus,
+    required this.tipoUsuario,
+    this.appMetadata,
+    this.userMetadata,
+    this.aud,
+    this.createdAt,
   });
 
-  User copyWith({
+  AppUser copyWith({
     String? name,
     String? id,
     PaymentStatus? paymentStatus,
+    int? tipoUsuario,
+    Map<String, dynamic>? appMetadata,
+    Map<String, dynamic>? userMetadata,
+    String? aud,
+    DateTime? createdAt,
   }) {
-    return User(
+    return AppUser(
       name: name ?? this.name,
       id: id ?? this.id,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      tipoUsuario: tipoUsuario ?? this.tipoUsuario,
+      appMetadata: appMetadata ?? this.appMetadata,
+      userMetadata: userMetadata ?? this.userMetadata,
+      aud: aud ?? this.aud,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
@@ -87,8 +159,22 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class UserListScreen extends StatelessWidget {
+class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
+
+  @override
+  State<UserListScreen> createState() => _UserListScreenState();
+}
+
+class _UserListScreenState extends State<UserListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Buscar os usuários quando a tela é carregada
+    Future.microtask(() {
+      context.read<PaymentData>().fetchUsersFromDatabase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +191,44 @@ class UserListScreen extends StatelessWidget {
       ),
       body: Consumer<PaymentData>(
         builder: (context, paymentData, child) {
+          if (paymentData.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  const Text('Erro ao carregar usuários:'),
+                  Text(paymentData.error!, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => paymentData.fetchUsersFromDatabase(),
+                    child: const Text('Tentar novamente'),
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          if (paymentData.isLoading) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Carregando usuários...'),
+                ],
+              ),
+            );
+          }
+
+          if (paymentData.users.isEmpty) {
+            return const Center(
+              child: Text('Nenhum usuário encontrado'),
+            );
+          }
+
           return ListView.builder(
             itemCount: paymentData.users.length,
             itemBuilder: (context, index) {
