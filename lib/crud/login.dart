@@ -38,13 +38,14 @@ Future<Map<String, dynamic>> login(String email, String senha, BuildContext cont
     final userType = response['tipo_usuario'];
     final userProfile = Provider.of<UserProfileData>(context, listen: false);
     userProfile.updateName(userName);
-    userProfile.userType = userType;
+    userProfile.updateUserType(userType);
 
     // Salva as credenciais no shared_preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('email', email);
     await prefs.setString('nome_usuario', userName);
     await prefs.setInt('tipo_usuario', userType);
+    await prefs.setString('id_usuario', response['id_usuario'].toString());
 
     return {
       'status': 'success',
@@ -258,7 +259,7 @@ class _LoginPageState extends State<LoginPage> {
                         if (status == 'success') {
                           final userId = data['id_usuario'].toString();
                           final userName = data['nome_usuario'].toString();
-                          Provider.of<UserData>(context, listen: false).setUser(userId, userName);
+                          await Provider.of<UserData>(context, listen: false).setUser(userId, userName);
                           Navigator.pushReplacementNamed(context, "/home");
                         }
                       }

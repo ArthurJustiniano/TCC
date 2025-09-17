@@ -32,6 +32,11 @@ class UserProfileData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateUserType(int newType) {
+    userType = newType;
+    notifyListeners();
+  }
+
   void togglePayment(String month, bool? newValue) {
     if (newValue != null) {
       monthlyPayments[month] = newValue;

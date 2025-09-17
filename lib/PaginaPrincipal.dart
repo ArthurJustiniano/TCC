@@ -2,7 +2,7 @@ import 'package:app_flutter/user_profile_data.dart';
 import 'package:flutter/material.dart';
 import 'package:app_flutter/localizacao.dart' as localizacao;
 import 'package:app_flutter/carteirinha.dart' as carteirinha;
-import 'package:app_flutter/chatpage.dart' as chatpage;
+import 'package:app_flutter/chat/user_list_page.dart';
 import 'package:app_flutter/mural.dart' as mural;
 import 'package:app_flutter/usuariopage.dart' as usuariopage;
 import 'package:app_flutter/crud/login.dart';
@@ -33,12 +33,7 @@ class _MainDrawerState extends State<MainDrawer> {
   final List<Widget> _pages = [
     localizacao.BusAppHomePage(),
     const carteirinha.DigitalCardScreen(),
-    // TODO: Substituir este placeholder por uma página que liste as conversas.
-    // A `ChatPage` atual requer `receiverId` e `receiverUsername` e não pode ser
-    // instanciada aqui diretamente.
-    const Center(
-      child: Text('Página de conversas em desenvolvimento.'),
-    ),
+    const ChatUserListPage(),
     const mural.NewsPage(),
     const usuariopage.UserProfileScreen(), // Adicionando a página de usuário
   ];

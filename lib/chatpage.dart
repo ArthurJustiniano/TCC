@@ -33,7 +33,9 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
 
     // Busca os dados do usuário logado a partir dos Providers.
-    _myUserId = Provider.of<UserData>(context, listen: false).id;
+  // UserData.userId is stored as String?; convert to int if possible
+  final userIdStr = Provider.of<UserData>(context, listen: false).userId;
+  _myUserId = int.tryParse(userIdStr ?? '') ?? 0;
     _myUsername = Provider.of<UserProfileData>(context, listen: false).name;
 
     // Verificação de segurança: Garante que o usuário está logado antes de prosseguir.
@@ -54,13 +56,12 @@ class _ChatPageState extends State<ChatPage> {
     // Cria um ID de sala de chat único e consistente.
     _chatRoomId = _createChatRoomId(_myUserId, widget.receiverId);
 
-    _channel = Supabase.instance.client.realtime.channel(_chatRoomId);
+    _channel = Supabase.instance.client.channel(_chatRoomId);
 
-    _channel
-        .on(RealtimeListenTypes.broadcast, ChannelFilter(event: 'message'),
-            (payload, [ref]) {
+    _channel.onBroadcast(event: 'message', callback: (payload) {
       // Não adiciona a mensagem se for do próprio usuário (já foi adicionada localmente).
-      if (payload['sender_id'] != _myUserId) {
+      final payloadSender = _coerceInt(payload['sender_id']);
+      if (payloadSender != _myUserId) {
         final message = _ChatMessage.fromMap(payload);
         // Garante que o widget ainda está na árvore antes de chamar setState.
         if (mounted) {
@@ -69,9 +70,17 @@ class _ChatPageState extends State<ChatPage> {
           });
         }
       }
-    }).subscribe();
+    });
+
+    _channel.subscribe();
 
     _loadInitialMessages();
+  }
+
+  int _coerceInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   String _createChatRoomId(int userId1, int userId2) {
@@ -154,8 +163,7 @@ class _ChatPageState extends State<ChatPage> {
         'username': _myUsername, // Nome do remetente para exibição
       };
 
-      await _channel.send(
-        type: RealtimeListenTypes.broadcast,
+      await _channel.sendBroadcastMessage(
         event: 'message',
         payload: broadcastPayload,
       );
@@ -312,8 +320,13 @@ class _ChatMessage {
 
   factory _ChatMessage.fromMap(Map<String, dynamic> map) {
     return _ChatMessage(
-      // Garante que o sender_id não seja nulo, o que causaria um erro.
-      senderId: map['sender_id'] as int? ?? 0,
+      // Converte sender_id de int ou string para int de forma segura
+      senderId: (() {
+        final v = map['sender_id'];
+        if (v is int) return v;
+        if (v is String) return int.tryParse(v) ?? 0;
+        return 0;
+      })(),
       // Obtém o nome de usuário de qualquer uma das fontes (broadcast ou DB).
       username: map['username'] ?? map['sender_username'] ?? 'Desconhecido',
       message: map['message'] ?? '',

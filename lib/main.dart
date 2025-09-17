@@ -27,19 +27,32 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final savedEmail = prefs.getString('email');
   final savedName = prefs.getString('nome_usuario');
-  final savedId = prefs.getInt('id_usuario'); // <-- Adicionar
   final savedUserType = prefs.getInt('tipo_usuario');
+  final savedUserId = prefs.getString('id_usuario');
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => NewsData()),
-        ChangeNotifierProvider(
-            create: (context) => UserProfileData()
-              ..updateName(savedName ?? '')
-              ..userType = savedUserType ?? 1),
+        ChangeNotifierProvider(create: (context) {
+          final profile = UserProfileData();
+          if (savedName != null) profile.updateName(savedName);
+          if (savedUserType != null) profile.updateUserType(savedUserType);
+          return profile;
+        }),
         ChangeNotifierProvider(create: (context) => PaymentData()),
-        ChangeNotifierProvider(create: (context) => UserData()..id = savedId ?? 0), // <-- Adicionar
+        ChangeNotifierProvider(create: (context) {
+          final ud = UserData();
+          // hydrate from saved values
+          if (savedUserId != null && savedName != null) {
+            // setUser persists too
+            ud.setUser(savedUserId, savedName);
+          } else {
+            // fallback: attempt load
+            ud.loadFromPrefs();
+          }
+          return ud;
+        }),
       ],
       child: MaterialApp(
         home: savedEmail != null && savedName != null && savedUserType != null
@@ -48,19 +61,4 @@ Future<void> main() async {
       ),
     ),
   );
-}
-
-class UserData extends ChangeNotifier {
-
-  int _id = 0;
-
-  int get id => _id;
-
-  set id(int value) {
-    _id = value;
-    notifyListeners();
-  }
-
-  // Existing fields and methods
-
 }
