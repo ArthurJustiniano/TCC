@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:app_flutter/user_profile_data.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(
@@ -274,41 +276,264 @@ class _UserListScreenState extends State<UserListScreen> {
   }
 }
 
-class PaymentDetailsScreen extends StatelessWidget {
+class PaymentDetailsScreen extends StatefulWidget {
   final String userId;
 
   const PaymentDetailsScreen({Key? key, required this.userId}) : super(key: key);
 
   @override
+  State<PaymentDetailsScreen> createState() => _PaymentDetailsScreenState();
+}
+
+class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
+  late final int _passengerId;
+  final int _year = DateTime.now().year;
+  bool _loading = true;
+  String? _error;
+
+  // One status per month (0..11). Defaults to pending.
+  late List<PaymentStatus> _monthStatuses;
+  // Track existing row IDs per month to know when to update vs insert.
+  late List<int?> _monthRowIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _passengerId = int.tryParse(widget.userId) ?? 0;
+    _monthStatuses = List.filled(12, PaymentStatus.pending);
+    _monthRowIds = List.filled(12, null);
+    _loadYearPayments();
+  }
+
+  Future<void> _loadYearPayments() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final from = DateTime(_year, 1, 1);
+      final to = DateTime(_year, 12, 31);
+      final rows = await Supabase.instance.client
+          .from('pagamento')
+          .select('id_pagamento, data_pagamento, status')
+          .eq('cod_passageiro', _passengerId)
+          .gte('data_pagamento', DateFormat('yyyy-MM-dd').format(from))
+          .lte('data_pagamento', DateFormat('yyyy-MM-dd').format(to));
+
+      for (final row in rows) {
+        final dateVal = row['data_pagamento'];
+        DateTime? date;
+        if (dateVal is String) {
+          date = DateTime.tryParse(dateVal);
+        } else if (dateVal is DateTime) {
+          date = dateVal;
+        }
+        if (date == null) continue;
+        final mIndex = date.month - 1; // 0..11
+        if (mIndex < 0 || mIndex > 11) continue;
+        _monthRowIds[mIndex] = (row['id_pagamento'] as num).toInt();
+        final status = (row['status'] as String?)?.toUpperCase();
+        switch (status) {
+          case 'PAGO':
+            _monthStatuses[mIndex] = PaymentStatus.paid;
+            break;
+          case 'INADIMPLENTE':
+            _monthStatuses[mIndex] = PaymentStatus.failed;
+            break;
+          default:
+            _monthStatuses[mIndex] = PaymentStatus.pending;
+        }
+      }
+
+      setState(() => _loading = false);
+    } catch (e) {
+      setState(() {
+        _error = 'Erro ao carregar pagamentos: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _saveMonth(int monthIndex, PaymentStatus status) async {
+    final month = monthIndex + 1; // 1..12
+    final monthDate = DateTime(_year, month, 1);
+
+    // Map status back to DB string
+    String dbStatus;
+    switch (status) {
+      case PaymentStatus.paid:
+        dbStatus = 'PAGO';
+        break;
+      case PaymentStatus.failed:
+        dbStatus = 'INADIMPLENTE';
+        break;
+      case PaymentStatus.pending:
+        dbStatus = 'PENDENTE';
+        break;
+    }
+
+    try {
+      final rowId = _monthRowIds[monthIndex];
+      if (rowId != null) {
+        // Update existing row for this month
+        await Supabase.instance.client
+            .from('pagamento')
+            .update({
+              'status': dbStatus,
+              // Gravamos o 1º dia do mês como referência do mês.
+              'data_pagamento': DateFormat('yyyy-MM-dd').format(monthDate),
+            })
+            .eq('id_pagamento', rowId);
+      } else {
+        // Insert new row for this month
+        final inserted = await Supabase.instance.client
+            .from('pagamento')
+            .insert({
+              'cod_passageiro': _passengerId,
+              'status': dbStatus,
+              'data_pagamento': DateFormat('yyyy-MM-dd').format(monthDate),
+              // 'valor': null, // opcional
+            })
+            .select('id_pagamento')
+            .single();
+        _monthRowIds[monthIndex] = (inserted['id_pagamento'] as num).toInt();
+      }
+
+      setState(() {
+        _monthStatuses[monthIndex] = status;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pagamento atualizado.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao salvar: $e')),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final user = Provider.of<PaymentData>(context, listen: false)
-        .users
-        .firstWhere((user) => user.id == userId);
+    final appUser = context.read<PaymentData>().users.firstWhere((u) => u.id == widget.userId);
+    final userType = context.read<UserProfileData>().userType; // 2 = motorista, 3 = admin
+    final canEdit = userType == 2 || userType == 3;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
         title: const Text('Detalhes do Pagamento', style: TextStyle(color: Colors.white)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Status do Pagamento:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user.paymentStatus.displayString,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            Text('ID do Usuário: ${user.id}'),
-          ],
-        ),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const SizedBox(height: 12),
+                      Text(_error!, textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _loadYearPayments,
+                        child: const Text('Tentar novamente'),
+                      ),
+                    ],
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Passageiro: ${appUser.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text('ID do Usuário: ${appUser.id}'),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Pagamentos do Ano', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text('$_year'),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 3.2,
+                          ),
+                          itemCount: 12,
+                          itemBuilder: (context, index) {
+                            const monthsPt = [
+                              'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                              'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+                            ];
+                            final monthName = monthsPt[index];
+                            final status = _monthStatuses[index];
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      monthName[0].toUpperCase() + monthName.substring(1),
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    flex: 3,
+                                    child: canEdit
+                                        ? DropdownButton<PaymentStatus>(
+                                            value: status,
+                                            isExpanded: true,
+                                            items: const [
+                                              DropdownMenuItem(value: PaymentStatus.paid, child: Text('Pago')),
+                                              DropdownMenuItem(value: PaymentStatus.pending, child: Text('Pendente')),
+                                              DropdownMenuItem(value: PaymentStatus.failed, child: Text('Inadimplente')),
+                                            ],
+                                            onChanged: (val) {
+                                              if (val == null) return;
+                                              _saveMonth(index, val);
+                                            },
+                                          )
+                                        : Text(status.displayString),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      if (!canEdit)
+                        const Text(
+                          'Apenas administradores e motoristas podem editar.',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                    ],
+                  ),
+                ),
     );
   }
 }

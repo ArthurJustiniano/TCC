@@ -57,6 +57,18 @@ class _MainDrawerState extends State<MainDrawer> {
   Widget build(BuildContext context) {
     final userType = Provider.of<UserProfileData>(context).userType; // Obtém o tipo de usuário
 
+    // Se for motorista (2) ou administrador (3) e a aba selecionada for a Carteirinha (índice 1),
+    // redireciona automaticamente para a primeira aba para impedir o acesso.
+    if ((userType == 2 || userType == 3) && _selectedIndex == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        }
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
@@ -83,11 +95,12 @@ class _MainDrawerState extends State<MainDrawer> {
               title: const Text('Ônibus'),
               onTap: () => _onItemTapped(0),
             ),
-            ListTile(
-              leading: const Icon(Icons.credit_card),
-              title: const Text('Carteirinha'),
-              onTap: () => _onItemTapped(1),
-            ),
+            if (userType == 1)
+              ListTile(
+                leading: const Icon(Icons.credit_card),
+                title: const Text('Carteirinha'),
+                onTap: () => _onItemTapped(1),
+              ),
             ListTile(
               leading: const Icon(Icons.chat),
               title: const Text('Bate-papo'),
