@@ -9,11 +9,8 @@ import 'package:app_flutter/crud/login.dart';
 import 'package:app_flutter/visualizar_pagamento_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login_page.dart'; // Importe a página de login
-
-String websocket = 'wss://seu-endereco-websocket';
-
-
+// TODO: A página de chat agora é para conversas 1-para-1 e precisa ser chamada
+// a partir de uma lista de usuários/conversas, não como uma página principal.
 class PaginaPrincipal extends StatelessWidget {
   const PaginaPrincipal({super.key});
 
@@ -36,9 +33,11 @@ class _MainDrawerState extends State<MainDrawer> {
   final List<Widget> _pages = [
     localizacao.BusAppHomePage(),
     const carteirinha.DigitalCardScreen(),
-    chatpage.ChatPage(
-      username: '', // Inicialmente vazio, será definido no onItemTapped
-      wsUrl: websocket,
+    // TODO: Substituir este placeholder por uma página que liste as conversas.
+    // A `ChatPage` atual requer `receiverId` e `receiverUsername` e não pode ser
+    // instanciada aqui diretamente.
+    const Center(
+      child: Text('Página de conversas em desenvolvimento.'),
     ),
     const mural.NewsPage(),
     const usuariopage.UserProfileScreen(), // Adicionando a página de usuário
