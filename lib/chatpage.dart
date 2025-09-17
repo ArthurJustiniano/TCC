@@ -167,6 +167,21 @@ class _ChatPageState extends State<ChatPage> {
         event: 'message',
         payload: broadcastPayload,
       );
+
+      // 3. Também envia um broadcast para o canal de inbox do destinatário para acionar notificação
+      final inboxChannel = Supabase.instance.client.channel('inbox_${widget.receiverId}');
+      await inboxChannel.subscribe();
+      await inboxChannel.sendBroadcastMessage(
+        event: 'chat_message',
+        payload: {
+          'sender_id': _myUserId,
+          'sender_username': _myUsername,
+          'message': messageText,
+          'chat_room_id': _chatRoomId,
+        },
+      );
+      // Clean up the ephemeral channel used only for broadcasting
+      Supabase.instance.client.removeChannel(inboxChannel);
     } catch (e) {
       debugPrint('Erro ao enviar mensagem: $e');
       // Se o envio falhar, remove a mensagem da lista e notifica o usuário.

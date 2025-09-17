@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:app_flutter/user_profile_data.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 class NewsData extends ChangeNotifier {
@@ -62,6 +65,8 @@ class NewsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final newsData = Provider.of<NewsData>(context);
+    final userType = Provider.of<UserProfileData>(context).userType;
+    final canAdd = userType == 2; // 2 = motorista
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mural de Notícias'),
@@ -73,16 +78,18 @@ class NewsPage extends StatelessWidget {
           return NewsCard(newsItem: newsData.newsItems[index]);
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddNewsPage()),
-          );
-        },
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.blue[700],
-      ),
+      floatingActionButton: canAdd
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddNewsPage()),
+                );
+              },
+              child: const Icon(Icons.add),
+              backgroundColor: Colors.blue[700],
+            )
+          : null,
     );
   }
 }
@@ -136,7 +143,25 @@ class AddNewsPage extends StatefulWidget {
 class _AddNewsPageState extends State<AddNewsPage> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  final _dateController = TextEditingController();
+
+  String _todayStr() => DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    // Garante que apenas motoristas podem acessar esta tela
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userType = Provider.of<UserProfileData>(context, listen: false).userType;
+      if (userType != 2) {
+        ScaffoldMessenger.of(context)
+          ..removeCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+              content: Text('Apenas motoristas podem adicionar notícias.'),
+            ));
+        Navigator.of(context).pop();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,19 +182,44 @@ class _AddNewsPageState extends State<AddNewsPage> {
               controller: _contentController,
               decoration: const InputDecoration(labelText: 'Conteúdo'),
             ),
-            TextField(
-              controller: _dateController,
-              decoration: const InputDecoration(labelText: 'Data (AAAA-MM-DD)'),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Data: ' + DateFormat('yyyy-MM-dd').format(DateTime.now()),
+                style: const TextStyle(color: Colors.black54),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
+                final userType = Provider.of<UserProfileData>(context, listen: false).userType;
+                if (userType != 2) {
+                  ScaffoldMessenger.of(context)
+                    ..removeCurrentSnackBar()
+                    ..showSnackBar(const SnackBar(
+                        content: Text('Apenas motoristas podem adicionar notícias.'),
+                      ));
+                  return;
+                }
+
                 final newNewsItem = NewsItem(
                   title: _titleController.text,
                   content: _contentController.text,
-                  date: _dateController.text,
+                  date: _todayStr(),
                 );
                 Provider.of<NewsData>(context, listen: false).addNewsItem(newNewsItem);
+                // Broadcast to Supabase Realtime so other devices get notified
+                final channel = Supabase.instance.client.channel('news');
+                channel.subscribe();
+                channel.sendBroadcastMessage(
+                  event: 'news_created',
+                  payload: {
+                    'title': newNewsItem.title,
+                    'content': newNewsItem.content,
+                    'date': newNewsItem.date,
+                  },
+                );
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700]),
@@ -185,7 +235,6 @@ class _AddNewsPageState extends State<AddNewsPage> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _dateController.dispose();
     super.dispose();
   }
 }

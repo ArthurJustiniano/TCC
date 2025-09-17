@@ -8,6 +8,7 @@ import 'package:app_flutter/user_profile_data.dart';
 import 'package:app_flutter/visualizar_pagamento_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_flutter/user_data.dart';
+import 'package:app_flutter/notifications/notification_service.dart';
 
 const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
@@ -54,11 +55,59 @@ Future<void> main() async {
           return ud;
         }),
       ],
-      child: MaterialApp(
-        home: savedEmail != null && savedName != null && savedUserType != null
-            ? const PaginaPrincipal()
-            : const Login(),
+      child: AppRoot(
+        isLoggedIn: savedEmail != null && savedName != null && savedUserType != null,
       ),
     ),
   );
+}
+
+class AppRoot extends StatefulWidget {
+  final bool isLoggedIn;
+  const AppRoot({super.key, required this.isLoggedIn});
+
+  @override
+  State<AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<AppRoot> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize local notifications
+    NotificationService.instance.init().then((_) {
+      // Subscribe to global news channel
+      NotificationService.instance.subscribeNews();
+      // Attach inbox subscription for current user if available
+      final userIdStr = context.read<UserData>().userId;
+      final userId = int.tryParse(userIdStr ?? '');
+      if (userId != null) {
+        NotificationService.instance.subscribeInbox(userId: userId);
+      }
+    });
+
+    // Listen to user changes and (re)subscribe inbox channel accordingly
+    context.read<UserData>().addListener(_onUserChanged);
+  }
+
+  void _onUserChanged() {
+    final userIdStr = context.read<UserData>().userId;
+    final userId = int.tryParse(userIdStr ?? '');
+    if (userId != null) {
+      NotificationService.instance.subscribeInbox(userId: userId);
+    }
+  }
+
+  @override
+  void dispose() {
+    context.read<UserData>().removeListener(_onUserChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: widget.isLoggedIn ? const PaginaPrincipal() : const Login(),
+    );
+  }
 }
