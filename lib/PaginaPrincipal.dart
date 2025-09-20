@@ -7,6 +7,7 @@ import 'package:app_flutter/mural.dart' as mural;
 import 'package:app_flutter/usuariopage.dart' as usuariopage;
 import 'package:app_flutter/crud/login.dart';
 import 'package:app_flutter/visualizar_pagamento_page.dart';
+import 'package:app_flutter/cadastro_adm.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // TODO: A página de chat agora é para conversas 1-para-1 e precisa ser chamada
@@ -125,6 +126,19 @@ class _MainDrawerState extends State<MainDrawer> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const VisualizarPagamentoPage(),
+                    ),
+                  );
+                },
+              ),
+            if (userType == 3)
+              ListTile(
+                leading: const Icon(Icons.admin_panel_settings),
+                title: const Text('Cadastrar Motorista/Admin'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminUserRegistrationPage(),
                     ),
                   );
                 },
