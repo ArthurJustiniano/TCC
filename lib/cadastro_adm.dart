@@ -15,6 +15,7 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _phoneController = TextEditingController();
   int _selectedRole = 2; // 2 = Motorista, 3 = Administrador
   bool _submitting = false;
 
@@ -23,6 +24,7 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -34,7 +36,8 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    final tipo = _selectedRole; // 2 or 3
+  final tipo = _selectedRole; // 2 or 3
+  final telefone = _phoneController.text.trim();
 
     try {
       // Para motoristas/admins, pagamento_status pode ser nulo
@@ -42,6 +45,7 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
         'nome_usuario': name,
         'email_usuario': email,
         'senha_usuario': password,
+        'telefone': telefone.isEmpty ? null : telefone,
         'tipo_usuario': tipo,
         // Não incluir 'pagamento_status' para 2/3; manter NULL por padrão
       };
@@ -56,6 +60,7 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
         _nameController.clear();
         _emailController.clear();
         _passwordController.clear();
+        _phoneController.clear();
         setState(() {});
       }
     } catch (e) {
@@ -135,6 +140,24 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
                   const Text(
                     'Informações do Usuário',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Telefone',
+                      border: OutlineInputBorder(),
+                      hintText: '(DDD) 90000-0000'
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Informe o telefone.';
+                      }
+                      final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                      if (digits.length < 8) return 'Telefone inválido';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(

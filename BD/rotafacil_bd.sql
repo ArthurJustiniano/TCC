@@ -4,14 +4,15 @@
 DROP TABLE IF EXISTS Usuario CASCADE;
 
 CREATE TABLE Usuario (
-    id_usuario SERIAL PRIMARY KEY, -- ID numérico incremental
-    nome_usuario VARCHAR(100),
-    email_usuario VARCHAR(100) UNIQUE,
-    senha_usuario VARCHAR(100),
-    pagamento_status VARCHAR(50),
-    tipo_usuario INT NOT NULL,  -- 1 = passageiro, 2 = motorista, 3 = admin
-    reset_code VARCHAR(6) NULL,
-    reset_expires TIMESTAMP NULL
+  id_usuario SERIAL PRIMARY KEY, -- ID numérico incremental
+  nome_usuario VARCHAR(100),
+  email_usuario VARCHAR(100) UNIQUE,
+  senha_usuario VARCHAR(100),
+  telefone VARCHAR(20), -- Novo campo telefone (pode armazenar formato internacional)
+  pagamento_status VARCHAR(50),
+  tipo_usuario INT NOT NULL,  -- 1 = passageiro, 2 = motorista, 3 = admin
+  reset_code VARCHAR(6) NULL,
+  reset_expires TIMESTAMP NULL
 );
 
 -- ========================================
@@ -138,15 +139,15 @@ where id = 1;
 -- ========================================
 -- Inserir usuários
 -- ========================================
-INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, pagamento_status, tipo_usuario) VALUES
-('Ana Souza', 'ana.souza@email.com', 'ana123', 'PAGO', 1),
-('Bruno Lima', 'bruno.lima@email.com', 'bruno456', 'PENDENTE', 1),
-('Carla Mendes', 'carla.mendes@email.com', 'carla789', 'PAGO', 1),
-('James', 'James@email.com', 'james', NULL, 2),
-('Leandro', 'Leandro@email.com', 'leandro', NULL, 2),
-('Davi Beraldi dos Santos', 'daviok25@gmail.com', '32424266', NULL, 3),
-('Arthur Justiniano', 'justiniano@email.com', 'justiniano', NULL, 3),
-('Arthur Nasioseno de Araujo Baroni', 'Baroni@email.com', 'baroni', NULL, 3);
+INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, telefone, pagamento_status, tipo_usuario) VALUES
+('Ana Souza', 'ana.souza@email.com', 'ana123', '+55 11 90000-0001', 'PAGO', 1),
+('Bruno Lima', 'bruno.lima@email.com', 'bruno456', '+55 11 90000-0002', 'PENDENTE', 1),
+('Carla Mendes', 'carla.mendes@email.com', 'carla789', '+55 11 90000-0003', 'PAGO', 1),
+('James', 'James@email.com', 'james', '+55 11 98888-0004', NULL, 2),
+('Leandro', 'Leandro@email.com', 'leandro', '+55 11 98888-0005', NULL, 2),
+('Davi Beraldi dos Santos', 'daviok25@gmail.com', '32424266', '+55 11 97777-0006', NULL, 3),
+('Arthur Justiniano', 'justiniano@email.com', 'justiniano', '+55 11 97777-0007', NULL, 3),
+('Arthur Nasioseno de Araujo Baroni', 'Baroni@email.com', 'baroni', '+55 11 97777-0008', NULL, 3);
 
 -- ========================================
 -- Inserir pagamentos

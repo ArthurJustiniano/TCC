@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
@@ -9,22 +7,32 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 final supabase = Supabase.instance.client;
 
+// Mantido por compatibilidade. Use cadastrarComTelefone.
 Future<String> cadastrar(String nome, String email, String senha) async {
+  return cadastrarComTelefone(nome, email, senha, '');
+}
+
+Future<String> cadastrarComTelefone(String nome, String email, String senha, String telefone) async {
   try {
-    final response = await supabase
-        .from('usuario') // Corrigido para letras minúsculas
+    await supabase
+        .from('usuario')
         .insert({
           'nome_usuario': nome,
           'email_usuario': email,
           'senha_usuario': senha,
-          'tipo_usuario': 1, // Definindo o tipo de usuário como padrão
+          'telefone': telefone,
+          'tipo_usuario': 1,
           'pagamento_status': 'PENDENTE',
         });
-
     return 'Cadastro realizado com sucesso!';
   } catch (e) {
     debugPrint('Erro no cadastro: $e');
-    return 'Erro de conexão: $e';
+    String msg = 'Erro de conexão: $e';
+    final lower = e.toString().toLowerCase();
+    if (lower.contains('duplicate') || lower.contains('unique')) {
+      msg = 'Email já cadastrado.';
+    }
+    return msg;
   }
 }
 
@@ -32,11 +40,13 @@ class RegistrationData extends ChangeNotifier {
   String _name = '';
   String _email = '';
   String _password = '';
+  String _phone = '';
   bool _obscureText = true;
 
   String get name => _name;
   String get email => _email;
   String get password => _password;
+  String get phone => _phone;
   bool get obscureText => _obscureText;
 
   set name(String value) {
@@ -51,6 +61,11 @@ class RegistrationData extends ChangeNotifier {
 
   set password(String value) {
     _password = value;
+    notifyListeners();
+  }
+
+  set phone(String value) {
+    _phone = value;
     notifyListeners();
   }
 
@@ -141,6 +156,34 @@ class _CadastroState extends State<Cadastro> {
                       decoration: const InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
+                        labelText: 'Telefone',
+                        labelStyle: TextStyle(color: Colors.black),
+                        hintText: '(DDD) 90000-0000',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira seu telefone.';
+                        }
+                        final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                        if (digits.length < 8) {
+                          return 'Telefone inválido.';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        Provider.of<RegistrationData>(context, listen: false).phone = value;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
                         labelText: 'Email',
                         labelStyle: TextStyle(color: Colors.black),
                         border: OutlineInputBorder(
@@ -167,7 +210,7 @@ class _CadastroState extends State<Cadastro> {
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: const Color.fromARGB(255, 253, 253, 253),
-                          labelText: 'Password',
+                          labelText: 'senha',
                           labelStyle: TextStyle(color: Colors.black),
                           border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(8.0)),
@@ -215,10 +258,12 @@ class _CadastroState extends State<Cadastro> {
                           debugPrint('Email: ${Provider.of<RegistrationData>(context, listen: false).email}');
                           debugPrint('Password: ${Provider.of<RegistrationData>(context, listen: false).password}');                 
                           
-                          String mensagem = await cadastrar(
-                            context.read<RegistrationData>().name,
-                            context.read<RegistrationData>().email,
-                            context.read<RegistrationData>().password,
+                          final reg = context.read<RegistrationData>();
+                          String mensagem = await cadastrarComTelefone(
+                            reg.name,
+                            reg.email,
+                            reg.password,
+                            reg.phone,
                           );
                         
                           ScaffoldMessenger.of(context).showSnackBar(
