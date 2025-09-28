@@ -116,6 +116,25 @@ CREATE TABLE public.messages (
   sender_username TEXT
 );
 
+create table if not exists public.payment_info (
+  id int primary key,
+  content text
+);
+
+insert into public.payment_info (id, content)
+values (
+  1,
+  'CHAVE PIX: exemplo@provedor.com\n(Altere este texto no painel de admin)'
+)
+on conflict (id) do update
+set content = excluded.content;
+
+alter table public.payment_info
+  add column if not exists amount_content text;
+
+update public.payment_info
+set amount_content = coalesce(amount_content, 'Valor mensal: R$ 120,50')
+where id = 1;
 -- ========================================
 -- Inserir usuários
 -- ========================================

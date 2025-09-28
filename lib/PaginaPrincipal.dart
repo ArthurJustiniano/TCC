@@ -8,6 +8,8 @@ import 'package:app_flutter/usuariopage.dart' as usuariopage;
 import 'package:app_flutter/crud/login.dart';
 import 'package:app_flutter/visualizar_pagamento_page.dart';
 import 'package:app_flutter/cadastro_adm.dart';
+import 'package:app_flutter/pagamento_page.dart';
+import 'package:app_flutter/deletar_usuario.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // TODO: A página de chat agora é para conversas 1-para-1 e precisa ser chamada
@@ -102,6 +104,19 @@ class _MainDrawerState extends State<MainDrawer> {
                 title: const Text('Carteirinha'),
                 onTap: () => _onItemTapped(1),
               ),
+            if (userType == 1 || userType == 3)
+              ListTile(
+                leading: const Icon(Icons.attach_money),
+                title: const Text('Pagamentos'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PaymentPage(),
+                    ),
+                  );
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.chat),
               title: const Text('Bate-papo'),
@@ -139,6 +154,19 @@ class _MainDrawerState extends State<MainDrawer> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const AdminUserRegistrationPage(),
+                    ),
+                  );
+                },
+              ),
+            if (userType == 3)
+              ListTile(
+                leading: const Icon(Icons.delete_forever),
+                title: const Text('Excluir Usuários'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DeleteUsersPage(),
                     ),
                   );
                 },
