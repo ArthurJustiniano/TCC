@@ -4,8 +4,6 @@ import 'package:app_flutter/user_data.dart';
 import 'package:app_flutter/crud/esqueci_senha.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_flutter/user_profile_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,18 +31,25 @@ Future<Map<String, dynamic>> login(String email, String senha, BuildContext cont
       return {'status': 'error', 'message': 'Credenciais inválidas. Tente novamente.'};
     }
 
-    // Atualiza o nome e o tipo de usuário no UserProfileData
+    // Atualiza perfil completo (nome, tipo, email, telefone)
     final userName = response['nome_usuario'];
     final userType = response['tipo_usuario'];
+    final userEmail = response['email_usuario'] ?? '';
+    final userPhone = response['telefone'] ?? '';
     final userProfile = Provider.of<UserProfileData>(context, listen: false);
     userProfile.updateName(userName);
     userProfile.updateUserType(userType);
+    userProfile.updateEmail(userEmail);
+    if (userPhone.toString().isNotEmpty) {
+      userProfile.updatePhone(userPhone);
+    }
 
     // Salva as credenciais no shared_preferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('email', email);
-    await prefs.setString('nome_usuario', userName);
-    await prefs.setInt('tipo_usuario', userType);
+  await prefs.setString('nome_usuario', userName);
+  await prefs.setInt('tipo_usuario', userType);
+  await prefs.setString('telefone', userPhone ?? '');
     await prefs.setString('id_usuario', response['id_usuario'].toString());
 
     return {
