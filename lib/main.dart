@@ -23,6 +23,10 @@ Future<void> main() async {
     url: supabaseUrl,
     anonKey: supabaseKey,
   );
+
+  // Inicializa notificações e assina Realtime
+  await NotificationService.instance.init();
+  await NotificationService.instance.subscribeToRealtime(Supabase.instance.client);
   
   // Verifica se há credenciais salvas
   final prefs = await SharedPreferences.getInstance();
@@ -109,5 +113,28 @@ class _AppRootState extends State<AppRoot> {
     return MaterialApp(
       home: widget.isLoggedIn ? const PaginaPrincipal() : const Login(),
     );
+  }
+}
+
+class NotificationService {
+
+  static final NotificationService instance = NotificationService._internal();
+
+  NotificationService._internal();
+
+  Future<void> init() async {
+    // Initialization logic
+  }
+
+  void subscribeNews() {
+    // Subscribe to global news channel
+  }
+
+  void subscribeInbox({required int userId}) {
+    // Subscribe to user-specific inbox channel
+  }
+
+  Future<void> subscribeToRealtime(SupabaseClient client) async {
+    // Add logic to subscribe to Supabase Realtime
   }
 }

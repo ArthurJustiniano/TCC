@@ -8,8 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Handles local notifications and Realtime subscriptions for news and chat inbox.
 class NotificationService {
-  NotificationService._();
-  static final NotificationService instance = NotificationService._();
+  static final NotificationService instance = NotificationService._internal();
+
+  NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin _fln = FlutterLocalNotificationsPlugin();
 
@@ -21,100 +22,99 @@ class NotificationService {
   Future<void> init() async {
     if (_initialized) return;
 
-    const AndroidInitializationSettings androidInit =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
-
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidInit,
-      iOS: iosInit,
-    );
-
+    // Inicialização
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosInit = DarwinInitializationSettings();
+    const initSettings = InitializationSettings(android: androidInit, iOS: iosInit);
     await _fln.initialize(initSettings);
 
-    // On Android 13+ request the POST_NOTIFICATIONS permission.
+    // Permissões
     if (Platform.isAndroid) {
-      await Permission.notification.request();
+      if (await Permission.notification.isDenied) {
+        await Permission.notification.request();
+      }
+      final android = _fln.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      // Canal padrão para Android 8+
+      await android?.createNotificationChannel(const AndroidNotificationChannel(
+        'default',
+        'Notificações',
+        description: 'Notificações gerais do app',
+        importance: Importance.high,
+      ));
+    } else if (Platform.isIOS) {
+      await _fln
+          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
     }
-
-    // Android 13+ requires runtime POST_NOTIFICATIONS permission; if you need, handle elsewhere.
 
     _initialized = true;
   }
 
-  /// Subscribe a broadcast for news board. Any device listening gets a local notification.
-  void subscribeNews() {
-    final client = Supabase.instance.client;
-    _newsChannel?.unsubscribe();
-    _newsChannel = client.channel('news');
-
-    _newsChannel!.onBroadcast(event: 'news_created', callback: (payload) async {
-      final title = (payload['title'] as String?)?.trim();
-      final content = (payload['content'] as String?)?.trim();
-      if (title == null || content == null) return;
-      await _showNotification(
-        id: _uniqueId(),
-        title: 'Nova notícia: $title',
-        body: content,
-        payload: 'news',
-      );
-    });
-
-    _newsChannel!.subscribe();
-  }
-
-  /// Subscribe to per-user inbox channel for chat messages.
-  void subscribeInbox({required int userId}) {
-    final client = Supabase.instance.client;
-    _inboxChannel?.unsubscribe();
-    _inboxChannel = client.channel('inbox_$userId');
-
-    _inboxChannel!.onBroadcast(event: 'chat_message', callback: (payload) async {
-      // Expect { sender_username, message, chat_room_id }
-      final sender = (payload['sender_username'] as String?) ?? 'Mensagem';
-      final message = (payload['message'] as String?) ?? '';
-      await _showNotification(
-        id: _uniqueId(),
-        title: sender,
-        body: message,
-        payload: 'chat',
-      );
-    });
-
-    _inboxChannel!.subscribe();
-  }
-
-  Future<void> _showNotification({
-    required int id,
+  Future<void> showSimple({
     required String title,
     required String body,
     String? payload,
+    int id = 0,
   }) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'default_channel',
-      'Geral',
+    const androidDetails = AndroidNotificationDetails(
+      'default',
+      'Notificações',
       channelDescription: 'Notificações gerais do app',
       importance: Importance.high,
       priority: Priority.high,
-      ticker: 'ticker',
+      icon: '@mipmap/ic_launcher',
     );
-
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
-
-    const NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    const iosDetails = DarwinNotificationDetails();
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await _fln.show(id, title, body, details, payload: payload);
   }
 
-  int _counter = 0;
-  int _uniqueId() => DateTime.now().millisecondsSinceEpoch.remainder(1 << 31) + (_counter++);
+  Future<void> subscribeNews() async {
+    final client = Supabase.instance.client;
+    _newsChannel ??= client
+        .channel('public:news')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'news',
+          callback: (payload) {
+            final data = payload.newRecord;
+            final title = (data['titulo'] ?? 'Nova notícia').toString();
+            final body = (data['resumo'] ?? '').toString();
+            showSimple(title: title, body: body);
+          },
+        )
+        .subscribe();
+  }
+
+  void subscribeInbox({required int userId}) {
+    final client = Supabase.instance.client;
+    _inboxChannel ??= client
+        .channel('public:inbox')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'inbox',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'recipient_id',
+            value: userId.toString(),
+          ),
+          callback: (payload) {
+            final data = payload.newRecord;
+            final title = (data['from_name'] ?? 'Nova mensagem').toString();
+            final body = (data['text'] ?? '').toString();
+            showSimple(title: title, body: body);
+          },
+        )
+        .subscribe();
+  }
 
   Future<void> dispose() async {
     await _newsChannel?.unsubscribe();
+    _newsChannel = null;
     await _inboxChannel?.unsubscribe();
+    _inboxChannel = null;
   }
 }
