@@ -30,6 +30,7 @@ Future<void> main() async {
   final savedName = prefs.getString('nome_usuario');
   final savedUserType = prefs.getInt('tipo_usuario');
   final savedUserId = prefs.getString('id_usuario');
+  final savedPhone = prefs.getString('telefone');
 
   runApp(
     MultiProvider(
@@ -39,6 +40,8 @@ Future<void> main() async {
           final profile = UserProfileData();
           if (savedName != null) profile.updateName(savedName);
           if (savedUserType != null) profile.updateUserType(savedUserType);
+          if (savedEmail != null) profile.updateEmail(savedEmail);
+          if (savedPhone != null && savedPhone.isNotEmpty) profile.updatePhone(savedPhone);
           return profile;
         }),
         ChangeNotifierProvider(create: (context) => PaymentData()),

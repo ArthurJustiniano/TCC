@@ -2,9 +2,62 @@ import 'package:app_flutter/user_profile_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
+
+  @override
+  State<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Carrega os dados quando a tela é inicializada
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserDataFromPrefs();
+    });
+  }
+
+  Future<void> _loadUserDataFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userProfile = Provider.of<UserProfileData>(context, listen: false);
+      
+      // Carrega dados do SharedPreferences se não estiverem presentes
+      if (userProfile.email.isEmpty || userProfile.email == 'joao.silva@exemplo.com') {
+        final savedEmail = prefs.getString('email');
+        if (savedEmail != null && savedEmail.isNotEmpty) {
+          userProfile.updateEmail(savedEmail);
+        }
+      }
+      
+      if (userProfile.name.isEmpty || userProfile.name == 'João da Silva') {
+        final savedName = prefs.getString('nome_usuario');
+        if (savedName != null && savedName.isNotEmpty) {
+          userProfile.updateName(savedName);
+        }
+      }
+      
+      if (userProfile.userType == 1 && userProfile.name == 'João da Silva') {
+        final savedUserType = prefs.getInt('tipo_usuario');
+        if (savedUserType != null) {
+          userProfile.updateUserType(savedUserType);
+        }
+      }
+      
+      if (userProfile.phone.isEmpty || userProfile.phone == '123-456-7890') {
+        final savedPhone = prefs.getString('telefone');
+        if (savedPhone != null && savedPhone.isNotEmpty) {
+          userProfile.updatePhone(savedPhone);
+        }
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar dados do usuário: $e');
+    }
+  }
 
   String _tipoLabel(int t) {
     switch (t) {
@@ -36,9 +89,13 @@ class UserProfileScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
+          child: RefreshIndicator(
+            onRefresh: _loadUserDataFromPrefs,
+            color: const Color(0xFF667eea),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
                 // Header com gradiente
                 Container(
                   width: double.infinity,
@@ -322,7 +379,8 @@ class UserProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

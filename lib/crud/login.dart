@@ -156,146 +156,331 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade200,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const Text(
-                    'RotaFácil',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 32.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Icon(
-                    Icons.directions_bus,
-                    size: 48.0,
-                    color: Colors.indigo,
-                  ),
-                  const SizedBox(height: 40),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: Provider.of<LoginData>(context, listen: false)
-                        .validateEmail,
-                    onChanged: (value) =>
-                        Provider.of<LoginData>(context, listen: false)
-                            .updateEmail(value),
-                  ),
-                  const SizedBox(height: 20),
-                  Consumer<LoginData>(
-                    builder: (context, loginData, child) => TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Senha',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            loginData.obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.blue,
-                          ),
-                          onPressed: loginData.toggleObscurePassword,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
+              Color(0xFF6B73FF),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo e título
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 2,
                         ),
                       ),
-                      obscureText: loginData.obscurePassword,
-                      validator: loginData.validatePassword,
-                      onChanged: (value) => loginData.updatePassword(value),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ForgotPasswordPage(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Esqueci minha senha',
-                        style: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                      child: const Icon(
+                        Icons.directions_bus_rounded,
+                        size: 64,
+                        color: Colors.white,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
+                    const SizedBox(height: 24),
+                    const Text(
+                      'RotaFácil',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sua jornada começa aqui',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.8),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
                     
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      textStyle: const TextStyle(fontSize: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      
+                    // Card de login
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                    ),
-                    onPressed: ()async {
-                      if (_formKey.currentState!.validate()) {
-                        Map<String, dynamic> data = await login(
-                          context.read<LoginData>().email,
-                          context.read<LoginData>().password,
-                          context
-                        );
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Bem-vindo de volta!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2C3E50),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Entre com suas credenciais',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            
+                            // Campo Email
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              child: TextFormField(
+                                decoration: InputDecoration(
+                                  labelText: 'Email',
+                                  labelStyle: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 16,
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.all(20),
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                validator: Provider.of<LoginData>(context, listen: false)
+                                    .validateEmail,
+                                onChanged: (value) =>
+                                    Provider.of<LoginData>(context, listen: false)
+                                        .updateEmail(value),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Campo Senha
+                            Consumer<LoginData>(
+                              builder: (context, loginData, child) => Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    labelText: 'Senha',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 16,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.lock_outline,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        loginData.obscurePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                      onPressed: loginData.toggleObscurePassword,
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.all(20),
+                                  ),
+                                  obscureText: loginData.obscurePassword,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  validator: loginData.validatePassword,
+                                  onChanged: (value) => loginData.updatePassword(value),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Esqueci minha senha
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ForgotPasswordPage(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'Esqueci minha senha',
+                                  style: TextStyle(
+                                    color: Color(0xFF667eea),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            
+                            // Botão Login
+                            Container(
+                              height: 56,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF667eea),
+                                    Color(0xFF764ba2),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF667eea).withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      Map<String, dynamic> data = await login(
+                                        context.read<LoginData>().email,
+                                        context.read<LoginData>().password,
+                                        context
+                                      );
 
-                        final status = (data['status'] ?? '').toString().toLowerCase();
-                        final msg = (data['message'] ?? 'Erro desconhecido').toString();
+                                      final status = (data['status'] ?? '').toString().toLowerCase();
+                                      final msg = (data['message'] ?? 'Erro desconhecido').toString();
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(msg)),
-                        );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(msg),
+                                          backgroundColor: status == 'success' 
+                                              ? Colors.green.shade600 
+                                              : Colors.red.shade600,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      );
 
-                        if (status == 'success') {
-                          final userId = data['id_usuario'].toString();
-                          final userName = data['nome_usuario'].toString();
-                          await Provider.of<UserData>(context, listen: false).setUser(userId, userName);
-                          Navigator.pushReplacementNamed(context, "/home");
-                        }
-                      }
-                    },
-                    child: const Text('Logar'),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF2DAAF0),
-                        minimumSize: const Size(double.infinity, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                                      if (status == 'success') {
+                                        final userId = data['id_usuario'].toString();
+                                        final userName = data['nome_usuario'].toString();
+                                        await Provider.of<UserData>(context, listen: false).setUser(userId, userName);
+                                        Navigator.pushReplacementNamed(context, "/home");
+                                      }
+                                    }
+                                  },
+                                  child: const Center(
+                                    child: Text(
+                                      'Entrar',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Botão Cadastrar
+                            Container(
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFF667eea),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ChangeNotifierProvider(
+                                          create: (_) => RegistrationData(),
+                                          child: const Cadastro(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Center(
+                                    child: Text(
+                                      'Criar Conta',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF667eea),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChangeNotifierProvider(
-                              create: (_) => RegistrationData(),
-                              child: const Cadastro(),
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Cadastrar')
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
