@@ -12,7 +12,9 @@ CREATE TABLE Usuario (
   pagamento_status VARCHAR(50),
   tipo_usuario INT NOT NULL,  -- 1 = passageiro, 2 = motorista, 3 = admin
   reset_code VARCHAR(6) NULL,
-  reset_expires TIMESTAMP NULL
+  reset_expires TIMESTAMP NULL,
+  pergunta_seguranca VARCHAR(255) NULL,
+  resposta_seguranca VARCHAR(255) NULL
 );
 
 -- ========================================
@@ -139,15 +141,15 @@ where id = 1;
 -- ========================================
 -- Inserir usuários
 -- ========================================
-INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, telefone, pagamento_status, tipo_usuario) VALUES
-('Ana Souza', 'ana.souza@email.com', 'ana123', '+55 11 90000-0001', 'PAGO', 1),
-('Bruno Lima', 'bruno.lima@email.com', 'bruno456', '+55 11 90000-0002', 'PENDENTE', 1),
-('Carla Mendes', 'carla.mendes@email.com', 'carla789', '+55 11 90000-0003', 'PAGO', 1),
-('James', 'James@email.com', 'james', '+55 11 98888-0004', NULL, 2),
-('Leandro', 'Leandro@email.com', 'leandro', '+55 11 98888-0005', NULL, 2),
-('Davi Beraldi dos Santos', 'daviok25@gmail.com', '32424266', '+55 11 97777-0006', NULL, 3),
-('Arthur Justiniano', 'justiniano@email.com', 'justiniano', '+55 11 97777-0007', NULL, 3),
-('Arthur Nasioseno de Araujo Baroni', 'Baroni@email.com', 'baroni', '+55 11 97777-0008', NULL, 3);
+INSERT INTO Usuario (nome_usuario, email_usuario, senha_usuario, telefone, pagamento_status, tipo_usuario, pergunta_seguranca, resposta_seguranca) VALUES
+('Ana Souza', 'ana.souza@email.com', 'ana123', '+55 11 90000-0001', 'PAGO', 1, 'Qual o nome do seu primeiro animal de estimação?', 'rex'),
+('Bruno Lima', 'bruno.lima@email.com', 'bruno456', '+55 11 90000-0002', 'PENDENTE', 1, 'Qual o nome da sua mãe?', 'maria'),
+('Carla Mendes', 'carla.mendes@email.com', 'carla789', '+55 11 90000-0003', 'PAGO', 1, 'Em que cidade você nasceu?', 'fortaleza'),
+('James', 'James@email.com', 'james', '+55 11 98888-0004', NULL, 2, 'Qual seu time do coração?', 'flamengo'),
+('Leandro', 'Leandro@email.com', 'leandro', '+55 11 98888-0005', NULL, 2, 'Qual o nome da sua primeira escola?', 'escola central'),
+('Davi Beraldi dos Santos', 'daviok25@gmail.com', '32424266', '+55 11 97777-0006', NULL, 3, 'Qual sua comida favorita?', 'pizza'),
+('Arthur Justiniano', 'justiniano@email.com', 'justiniano', '+55 11 97777-0007', NULL, 3, 'Qual seu filme favorito?', 'matrix'),
+('Arthur Nasioseno de Araujo Baroni', 'Baroni@email.com', 'baroni', '+55 11 97777-0008', NULL, 3, 'Qual o nome da sua rua de infância?', 'rua das flores');
 
 -- ========================================
 -- Inserir pagamentos

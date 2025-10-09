@@ -9,10 +9,10 @@ final supabase = Supabase.instance.client;
 
 // Mantido por compatibilidade. Use cadastrarComTelefone.
 Future<String> cadastrar(String nome, String email, String senha) async {
-  return cadastrarComTelefone(nome, email, senha, '');
+  return cadastrarComTelefone(nome, email, senha, '', '', '');
 }
 
-Future<String> cadastrarComTelefone(String nome, String email, String senha, String telefone) async {
+Future<String> cadastrarComTelefone(String nome, String email, String senha, String telefone, String perguntaSeguranca, String respostaSeguranca) async {
   try {
     await supabase
         .from('usuario')
@@ -21,6 +21,8 @@ Future<String> cadastrarComTelefone(String nome, String email, String senha, Str
           'email_usuario': email,
           'senha_usuario': senha,
           'telefone': telefone,
+          'pergunta_seguranca': perguntaSeguranca,
+          'resposta_seguranca': respostaSeguranca,
           'tipo_usuario': 1,
           'pagamento_status': 'PENDENTE',
         });
@@ -41,12 +43,16 @@ class RegistrationData extends ChangeNotifier {
   String _email = '';
   String _password = '';
   String _phone = '';
+  String _securityQuestion = '';
+  String _securityAnswer = '';
   bool _obscureText = true;
 
   String get name => _name;
   String get email => _email;
   String get password => _password;
   String get phone => _phone;
+  String get securityQuestion => _securityQuestion;
+  String get securityAnswer => _securityAnswer;
   bool get obscureText => _obscureText;
 
   set name(String value) {
@@ -66,6 +72,16 @@ class RegistrationData extends ChangeNotifier {
 
   set phone(String value) {
     _phone = value;
+    notifyListeners();
+  }
+
+  set securityQuestion(String value) {
+    _securityQuestion = value;
+    notifyListeners();
+  }
+
+  set securityAnswer(String value) {
+    _securityAnswer = value;
     notifyListeners();
   }
 
@@ -386,6 +402,134 @@ class _CadastroState extends State<Cadastro> {
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 20),
+                            
+                            // Campo Pergunta de Segurança
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              child: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: 'Pergunta de Segurança',
+                                  labelStyle: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 16,
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.quiz_outlined,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.all(20),
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF2C3E50),
+                                ),
+                                dropdownColor: Colors.white,
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'Qual o nome do seu primeiro animal de estimação?',
+                                    child: Flexible(
+                                      child: Text(
+                                        'Qual o nome do seu primeiro animal de estimação?',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Em que cidade você nasceu?',
+                                    child: Text('Em que cidade você nasceu?'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Qual o nome da sua mãe?',
+                                    child: Text('Qual o nome da sua mãe?'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Qual era o nome da sua primeira escola?',
+                                    child: Flexible(
+                                      child: Text(
+                                        'Qual era o nome da sua primeira escola?',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Qual é o seu filme favorito?',
+                                    child: Text('Qual é o seu filme favorito?'),
+                                  ),
+                                ],
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Por favor, selecione uma pergunta de segurança.';
+                                  }
+                                  return null;
+                                },
+                                onChanged: (value) {
+                                  Provider.of<RegistrationData>(context, listen: false).securityQuestion = value ?? '';
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Campo Resposta de Segurança
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              child: TextFormField(
+                                decoration: InputDecoration(
+                                  labelText: 'Resposta da Pergunta de Segurança',
+                                  labelStyle: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 16,
+                                  ),
+                                  hintText: 'Digite sua resposta...',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.security_outlined,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.all(20),
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Por favor, insira a resposta da pergunta de segurança.';
+                                  }
+                                  if (value.length < 2) {
+                                    return 'A resposta deve ter pelo menos 2 caracteres.';
+                                  }
+                                  return null;
+                                },
+                                onChanged: (value) {
+                                  Provider.of<RegistrationData>(context, listen: false).securityAnswer = value;
+                                },
+                              ),
+                            ),
                             const SizedBox(height: 32),
                             
                             // Botão Cadastrar
@@ -425,6 +569,8 @@ class _CadastroState extends State<Cadastro> {
                                         reg.email,
                                         reg.password,
                                         reg.phone,
+                                        reg.securityQuestion,
+                                        reg.securityAnswer,
                                       );
                                     
                                       ScaffoldMessenger.of(context).showSnackBar(

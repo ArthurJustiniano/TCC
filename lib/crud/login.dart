@@ -1,12 +1,12 @@
 import 'package:app_flutter/crud/cadastro.dart';
 import 'package:app_flutter/PaginaPrincipal.dart';
 import 'package:app_flutter/user_data.dart';
-import 'package:app_flutter/crud/esqueci_senha.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_flutter/user_profile_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_flutter/crud/esqueci_senha_pergunta.dart';
 
 const supabaseUrl = 'https://mpfvazaqmuzxzhihfnwz.supabase.co';
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wZnZhemFxbXV6eHpoaWhmbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg3OTksImV4cCI6MjA3MjY4NDc5OX0.B-K7Ib_e77zIhTeh9-hoXc4dDJPvO7a9M66osO1jFXw";
@@ -339,29 +339,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 16),
                             
-                            // Esqueci minha senha
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const ForgotPasswordPage(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'Esqueci minha senha',
-                                  style: TextStyle(
-                                    color: Color(0xFF667eea),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            
                             // Botão Login
                             Container(
                               height: 56,
@@ -473,6 +450,78 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            // Botão Esqueci minha senha
+                            Container(
+                              height: 56,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.deepPurple.shade400,
+                                    Colors.deepPurple.shade600,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.deepPurple.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const EsqueciSenhaPerguntaPage(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.quiz_outlined,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Esqueci minha senha',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            
+                            // Texto explicativo
+                            Text(
+                              'Recupere sua senha através de pergunta de segurança',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                                fontStyle: FontStyle.italic,
                               ),
                             ),
                           ],

@@ -25,6 +25,10 @@ class _MapPageState extends State<MapPage> {
   final Set<Marker> _markers = {};
   final LatLng _initialCameraPosition = const LatLng(-23.550520, -46.633308); // São Paulo
 
+  // Ícones personalizados
+  BitmapDescriptor? _busIcon;
+  BitmapDescriptor? _personIcon;
+
   // Stream para o modo motorista
   StreamSubscription<Position>? _positionStreamSubscription;
   // Assinatura do stream para o modo passageiro
@@ -35,6 +39,18 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     // Apenas solicita a permissão. A lógica do mapa começará em onMapCreated.
     _requestLocationPermission();
+    _loadCustomIcons();
+  }
+
+  Future<void> _loadCustomIcons() async {
+    _busIcon = await BitmapDescriptor.fromAssetImage(
+      const ImageConfiguration(size: Size(16, 16)),
+      'assets/images/marcador_onibus.png',
+    );
+    _personIcon = await BitmapDescriptor.fromAssetImage(
+      const ImageConfiguration(size: Size(16, 16)),
+      'assets/images/marcador_pessoa.png',
+    );
   }
 
   Future<void> _requestLocationPermission() async {
@@ -72,7 +88,7 @@ class _MapPageState extends State<MapPage> {
           markerId: const MarkerId(_driverMarkerId),
           position: initialLatLng,
           infoWindow: const InfoWindow(title: 'Sua Posição'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: _busIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         ));
         _startSendingDriverLocation();
       } else {
@@ -81,7 +97,7 @@ class _MapPageState extends State<MapPage> {
           markerId: const MarkerId(_userMarkerId),
           position: initialLatLng,
           infoWindow: const InfoWindow(title: 'Sua Posição'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon: _personIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         ));
         _startListeningToDriverLocation();
       }
@@ -104,7 +120,7 @@ class _MapPageState extends State<MapPage> {
           markerId: const MarkerId(_driverMarkerId),
           position: driverLocation,
           infoWindow: const InfoWindow(title: 'Sua Posição'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: _busIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         ),
       );
 
@@ -140,7 +156,7 @@ class _MapPageState extends State<MapPage> {
             markerId: const MarkerId(_driverMarkerId),
             position: driverPosition,
             infoWindow: const InfoWindow(title: 'Motorista'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+            icon: _busIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
           );
           _updateMarker(driverMarker);
           _mapController?.animateCamera(CameraUpdate.newLatLng(driverPosition));

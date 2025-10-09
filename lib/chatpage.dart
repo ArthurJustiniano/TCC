@@ -230,13 +230,6 @@ class _ChatPageState extends State<ChatPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
-                    'Online',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -255,17 +248,6 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              // Adicionar menu de opções se necessário
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -598,37 +580,6 @@ class _ChatPageState extends State<ChatPage> {
       child: SafeArea(
         child: Row(
           children: [
-            // Botão de anexo (opcional)
-            Container(
-              width: 44,
-              height: 44,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F7FA),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: Colors.grey.shade300,
-                  width: 1,
-                ),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.attach_file,
-                  color: Colors.grey.shade600,
-                  size: 20,
-                ),
-                onPressed: () {
-                  // Funcionalidade de anexo (implementar se necessário)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Funcionalidade de anexo em desenvolvimento'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-              ),
-            ),
-            
             // Campo de texto
             Expanded(
               child: Container(
@@ -656,19 +607,6 @@ class _ChatPageState extends State<ChatPage> {
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 12,
-                    ),
-                    suffixIcon: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      child: IconButton(
-                        icon: Icon(
-                          Icons.emoji_emotions_outlined,
-                          color: Colors.grey.shade600,
-                          size: 24,
-                        ),
-                        onPressed: () {
-                          // Funcionalidade de emoji (implementar se necessário)
-                        },
-                      ),
                     ),
                   ),
                   onSubmitted: (_) => _sendMessage(),

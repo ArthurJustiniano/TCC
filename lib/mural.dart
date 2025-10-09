@@ -437,33 +437,6 @@ class NewsCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.fiber_new,
-                          size: 14,
-                          color: const Color(0xFF4CAF50),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Novo',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF4CAF50),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ],

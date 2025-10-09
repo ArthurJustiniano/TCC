@@ -487,7 +487,7 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '${drivers.length} motoristas online',
+                          '${drivers.length} motoristas disponíveis',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -629,25 +629,7 @@ class _RouteExamplesPageState extends State<RouteExamplesPage> {
                                           color: const Color(0xFF27AE60).withOpacity(0.1),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.circle,
-                                              color: Color(0xFF27AE60),
-                                              size: 8,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              'Online',
-                                              style: TextStyle(
-                                                color: Color(0xFF27AE60),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        
                                       ),
                                     ],
                                   ),
