@@ -383,12 +383,17 @@ class _AdminUserRegistrationPageState extends State<AdminUserRegistrationPage> {
                               prefixIcon: Icon(Icons.help_outline),
                               hintText: 'Selecione uma pergunta de segurança',
                             ),
+                            isExpanded: true,
                             items: _securityQuestions.map((question) {
                               return DropdownMenuItem(
                                 value: question,
-                                child: Text(
-                                  question,
-                                  style: const TextStyle(fontSize: 14),
+                                child: Flexible(
+                                  child: Text(
+                                    question,
+                                    style: const TextStyle(fontSize: 14),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
                                 ),
                               );
                             }).toList(),

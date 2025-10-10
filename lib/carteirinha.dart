@@ -420,12 +420,16 @@ class carteirinha_page extends State<DigitalCardScreen> {
                                 child: const Icon(Icons.payment, color: Colors.white, size: 20),
                               ),
                               const SizedBox(width: 12),
-                              const Text(
-                                'Status de Pagamento Mensal',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                              Expanded(
+                                child: const Text(
+                                  'Status de Pagamento Mensal',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                             ],
