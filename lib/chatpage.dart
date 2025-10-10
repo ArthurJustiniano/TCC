@@ -68,6 +68,8 @@ class _ChatPageState extends State<ChatPage> {
           setState(() {
             _messages.insert(0, message);
           });
+          // Marcar a mensagem como lida já que o usuário está vendo o chat
+          _markMessagesAsRead();
         }
       }
     });
@@ -103,6 +105,10 @@ class _ChatPageState extends State<ChatPage> {
       final messages = (data as List)
           .map((item) => _ChatMessage.fromMap(item as Map<String, dynamic>))
           .toList();
+      
+      // Marcar mensagens não lidas do outro usuário como lidas
+      await _markMessagesAsRead();
+      
       if (mounted) {
         setState(() {
           _messages.addAll(messages);
@@ -117,6 +123,38 @@ class _ChatPageState extends State<ChatPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _markMessagesAsRead() async {
+    try {
+      await Supabase.instance.client
+          .from('messages')
+          .update({'is_read': true})
+          .eq('chat_room_id', _chatRoomId)
+          .eq('sender_id', widget.receiverId)
+          .eq('is_read', false);
+    } catch (e) {
+      debugPrint('Erro ao marcar mensagens como lidas: $e');
+    }
+  }
+
+  String _formatMessageTime(DateTime messageTime) {
+    final now = DateTime.now();
+    final difference = now.difference(messageTime);
+    
+    if (difference.inSeconds < 30) {
+      return 'agora';
+    } else if (difference.inMinutes < 1) {
+      return '${difference.inSeconds}s';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}min';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d';
+    } else {
+      return '${messageTime.day}/${messageTime.month}';
     }
   }
 
@@ -150,6 +188,7 @@ class _ChatPageState extends State<ChatPage> {
       'chat_room_id': _chatRoomId,
       'message': messageText,
       'sender_username': _myUsername,
+      'is_read': false, // Nova mensagem começa como não lida
     };
 
     try {
@@ -161,6 +200,7 @@ class _ChatPageState extends State<ChatPage> {
         'sender_id': _myUserId,
         'message': messageText,
         'username': _myUsername, // Nome do remetente para exibição
+        'created_at': DateTime.now().toIso8601String(),
       };
 
       await _channel.sendBroadcastMessage(
@@ -170,7 +210,7 @@ class _ChatPageState extends State<ChatPage> {
 
       // 3. Também envia um broadcast para o canal de inbox do destinatário para acionar notificação
       final inboxChannel = Supabase.instance.client.channel('inbox_${widget.receiverId}');
-      await inboxChannel.subscribe();
+      inboxChannel.subscribe();
       await inboxChannel.sendBroadcastMessage(
         event: 'chat_message',
         payload: {
@@ -529,7 +569,7 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Agora',
+                          _formatMessageTime(msg.createdAt),
                           style: TextStyle(
                             color: isMe ? Colors.white70 : Colors.grey.shade500,
                             fontSize: 11,
@@ -662,12 +702,14 @@ class _ChatMessage {
   final int senderId;
   final String username;
   final String message;
+  final DateTime createdAt;
 
   _ChatMessage({
     required this.senderId,
     required this.username,
     required this.message,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   factory _ChatMessage.fromMap(Map<String, dynamic> map) {
     return _ChatMessage(
@@ -681,6 +723,9 @@ class _ChatMessage {
       // Obtém o nome de usuário de qualquer uma das fontes (broadcast ou DB).
       username: map['username'] ?? map['sender_username'] ?? 'Desconhecido',
       message: map['message'] ?? '',
+      createdAt: map['created_at'] != null 
+          ? DateTime.tryParse(map['created_at']) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 }
